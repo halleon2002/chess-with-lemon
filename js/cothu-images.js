@@ -1,6 +1,6 @@
 const CT_PIECE_IMAGES = {
     elephant: "images/elephant.gif ",
-    lion: "data:image/lion.gif",
+    lion: "images/lion.gif",
     tiger: "images/tiger.gif",
     leopard: "images/panther.gif",
     wolf: "images/wolf.gif",
