@@ -179,17 +179,23 @@
     const result = CT.applyMove(board, from, to);
     selected = null;
     ctAnimateMove(from, to);
-    CT._finishTurn({ broadcast: true, from, to, wonByDen: result.wonByDen, mover: currentTurn });
+    if (typeof SFX !== "undefined") {
+      if (result.captured) SFX.capture();
+      else SFX.move();
+    }
+    CT._finishTurn({ broadcast: true, from, to, wonByDen: result.wonByDen, mover: currentTurn, captured: result.captured });
   };
 
   CT._finishTurn = function (opts) {
     opts = opts || {};
+    if (opts.from && opts.to) recordLastMove(opts.from, opts.to);
     if (mode === "online" && opts.broadcast && conn && conn.open) {
       conn.send({ type: "ctMove", from: opts.from, to: opts.to });
     }
     if (opts.wonByDen) {
       isGameOver = true; lastCtWinWasDen = true;
       updateStatus(); refreshHighlights();
+      if (typeof SFX !== "undefined") setTimeout(() => SFX.win(), 200);
       setTimeout(() => showGameOver(opts.mover), 300); return;
     }
     currentTurn = CT.other(currentTurn);
@@ -197,6 +203,7 @@
     if (winner) {
       isGameOver = true; lastCtWinWasDen = false;
       updateStatus(); refreshHighlights();
+      if (typeof SFX !== "undefined") setTimeout(() => SFX.win(), 200);
       setTimeout(() => showGameOver(winner), 300); return;
     }
     updateStatus(); refreshHighlights();
@@ -208,12 +215,20 @@
     if (!move) return;
     const result = CT.applyMove(board, move.from, move.to);
     ctAnimateMove(move.from, move.to);
-    CT._finishTurn({ broadcast: false, wonByDen: result.wonByDen, mover: side });
+    if (typeof SFX !== "undefined") {
+      if (result.captured) SFX.capture();
+      else SFX.move();
+    }
+    CT._finishTurn({ broadcast: false, from: move.from, to: move.to, wonByDen: result.wonByDen, mover: side, captured: result.captured });
   };
 
   CT.applyRemote = function (msg) {
     if (msg.type !== "ctMove") return;
     const result = CT.applyMove(board, msg.from, msg.to);
     ctAnimateMove(msg.from, msg.to);
-    CT._finishTurn({ broadcast: false, wonByDen: result.wonByDen, mover: currentTurn });
+    if (typeof SFX !== "undefined") {
+      if (result.captured) SFX.capture();
+      else SFX.move();
+    }
+    CT._finishTurn({ broadcast: false, from: msg.from, to: msg.to, wonByDen: result.wonByDen, mover: currentTurn, captured: result.captured });
   };

@@ -350,18 +350,18 @@ CHESS.chooseAIMove = function (board, side, chessState, depth) {
 };
 
 const CHESS_PIECE_IMAGES = {
-  white_king: "images/wk.png",
-  white_queen: "images/wq.png",
-  white_rook: "images/wr.png",
-  white_bishop: "images/wb.png",
-  white_knight: "images/wn.png",
-  white_pawn: "images/wp.png",
-  black_king: "images/bk.png",
-  black_queen: "images/bq.png",
-  black_rook: "images/br.png",
-  black_bishop: "images/bb.png",
-  black_knight: "images/bn.png",
-  black_pawn: "images/bp.png"
+  white_king: "images/chess_white_king.png",
+  white_queen: "images/chess_white_queen.png",
+  white_rook: "images/chess_white_rook.png",
+  white_bishop: "images/chess_white_bishop.png",
+  white_knight: "images/chess_white_knight.png",
+  white_pawn: "images/chess_white_pawn.png",
+  black_king: "images/chess_black_king.png",
+  black_queen: "images/chess_black_queen.png",
+  black_rook: "images/chess_black_rook.png",
+  black_bishop: "images/chess_black_bishop.png",
+  black_knight: "images/chess_black_knight.png",
+  black_pawn: "images/chess_black_pawn.png"
 };
 
 
@@ -404,6 +404,7 @@ CHESS._performMove = function (from, match) {
 
 CHESS._finishTurn = function (opts) {
   opts = opts || {};
+  if (opts.from && opts.to) recordLastMove(opts.from, opts.to);
   if (mode === "online" && opts.broadcast && conn && conn.open) {
     conn.send({ type: "chessMove", from: opts.from, to: opts.to });
   }

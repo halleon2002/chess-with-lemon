@@ -207,6 +207,38 @@
     entry.pieceGroup = group;
   }
 
+
+  function drawLastMoveMarker(entry, layer, coordX, coordY, cellSize) {
+    if (entry._lastMarker) {
+      if (entry._lastMarker.parentNode) entry._lastMarker.parentNode.removeChild(entry._lastMarker);
+      entry._lastMarker = null;
+    }
+  }
+
+  function applyLastMoveSquare(entry, p, layer, coordX, coordY, cell) {
+    if (entry._lastMarker) {
+      if (entry._lastMarker.parentNode) entry._lastMarker.parentNode.removeChild(entry._lastMarker);
+      entry._lastMarker = null;
+    }
+    if (!lastMove) return;
+    const isFrom = samePoint(lastMove.from, p);
+    const isTo = samePoint(lastMove.to, p);
+    if (!isFrom && !isTo) return;
+    const rect = document.createElementNS(NS, "rect");
+    const pad = 2;
+    rect.setAttribute("x", coordX(p.x) - cell / 2 + pad);
+    rect.setAttribute("y", coordY(p.y) - cell / 2 + pad);
+    rect.setAttribute("width", cell - pad * 2);
+    rect.setAttribute("height", cell - pad * 2);
+    rect.setAttribute("rx", "4");
+    rect.setAttribute("fill", isTo ? "rgba(244,192,99,0.38)" : "rgba(244,192,99,0.18)");
+    rect.setAttribute("stroke", isTo ? "var(--selected)" : "rgba(244,192,99,0.55)");
+    rect.setAttribute("stroke-width", isTo ? "2.5" : "1.5");
+    rect.style.pointerEvents = "none";
+    layer.insertBefore(rect, entry.hit);
+    entry._lastMarker = rect;
+  }
+
   function chessRefreshHighlights() {
     let dests = [];
     if (selected) dests = CHESS.getLegalMoves(board, selected, chessState).map(m => m.to);
@@ -217,6 +249,7 @@
       const isSelected = selected && samePoint(selected, p);
       const isDest = dests.some(m => samePoint(m, p));
       if (entry._marker) { entry.hit.parentNode && chessHitLayer.removeChild(entry._marker); entry._marker = null; }
+      applyLastMoveSquare(entry, p, chessHitLayer, chessCoordX, chessCoordY, CHESS_CELL);
       if (isSelected || isDest) {
         const marker = document.createElementNS(NS, "circle");
         marker.setAttribute("cx", chessCoordX(p.x));
@@ -627,10 +660,14 @@ async function preloadPieceImages() {
       const isSelected = selected && samePoint(selected, p);
       const isCapture = captureDests.some(m => samePoint(m, p));
       const isPlain = !isCapture && plainDests.some(m => samePoint(m, p));
+      const isLastFrom = lastMove && samePoint(lastMove.from, p);
+      const isLastTo = lastMove && samePoint(lastMove.to, p);
       entry.dot.classList.toggle("selected", !!isSelected);
       entry.dot.classList.toggle("capture", !!isCapture);
       entry.dot.classList.toggle("legal", !!isPlain);
-      if (!isSelected && !isCapture && !isPlain) entry.dot.setAttribute("fill", "var(--point)");
+      entry.dot.classList.toggle("last-from", !!isLastFrom && !isSelected);
+      entry.dot.classList.toggle("last-to", !!isLastTo && !isSelected);
+      if (!isSelected && !isCapture && !isPlain && !isLastFrom && !isLastTo) entry.dot.setAttribute("fill", "var(--point)");
 
       const piece = getPiece(board, p);
       let clickable = !isGameOver && humanTurn;
@@ -658,6 +695,7 @@ async function preloadPieceImages() {
       const isDest = dests.some(m => samePoint(m, p));
       entry.hit.classList.remove("legal-marker");
       if (entry._marker) { entry.hit.parentNode && ctHitLayer.removeChild(entry._marker); entry._marker = null; }
+      applyLastMoveSquare(entry, p, ctHitLayer, ctCoordX, ctCoordY, CT_CELL);
       if (isSelected || isDest) {
         const marker = document.createElementNS(NS, "circle");
         marker.setAttribute("cx", ctCoordX(p.x));

@@ -25,6 +25,12 @@ const ROOM_PREFIX = "kap-";
 // Score
 let score = { a: 0, b: 0 };
 let lastWinner = null;
+let lastMove = null; // { from: {x,y}, to: {x,y} } — last played move highlight
+
+function recordLastMove(from, to) {
+  if (from && to) lastMove = { from: { x: from.x, y: from.y }, to: { x: to.x, y: to.y } };
+  else lastMove = null;
+}
 
 function isHumanTurn() {
   if (mode === "local") return true;
@@ -57,6 +63,7 @@ function resetBoardLocal() {
   board = currentModule().createBoard();
   currentTurn = g.firstTurn;
   selected = null;
+  lastMove = null;
   isGameOver = false;
   ckPendingFrom = null;
   ckChainOrigin = null;
@@ -94,10 +101,6 @@ function openGameChoiceScreen() {
   startScreen.classList.remove("show");
   overlay.classList.remove("show");
   gameChoiceScreen.classList.add("show");
-  showLandingUI();
-  gameTitle.textContent = t("appTitle");
-  subtitle.textContent = t("chooseGameToBegin");
-  rulesNote.innerHTML = "";
 }
 
 function selectGame(gameKey) {
@@ -163,7 +166,6 @@ document.getElementById("joinRoomBtn").addEventListener("click", () => {
 document.getElementById("startBtn").addEventListener("click", () => {
   teardownConnection();
   startScreen.classList.remove("show");
-  showPlayUI();
   applyThemeColors();
   updateSubtitle();
   resetScore();
@@ -198,32 +200,19 @@ langToggleBtn.addEventListener("click", () => {
   refreshAllText();
 });
 
-// ================= Landing / play UI =================
-function showPlayUI() {
-  document.body.classList.remove("landing");
-  document.body.classList.add("playing");
-}
-
-function showLandingUI() {
-  document.body.classList.add("landing");
-  document.body.classList.remove("playing");
-}
-
 // ================= Init =================
 (async () => {
   wireGameModules();
 
   await preloadPieceImages();
 
-  // Build lattice geometry once (hidden until a lattice game starts)
+  board = KAP.createBoard();
   buildStaticLines();
   buildPoints();
   applyStaticTranslations();
   langToggleBtn.textContent = lang === "en" ? "VI" : "EN";
-
-  // Landing page: game chooser only — no board visible
-  showLandingUI();
-  gameTitle.textContent = t("appTitle");
-  subtitle.textContent = t("chooseGameToBegin");
-  rulesNote.innerHTML = "";
+  applyThemeColors();
+  syncPieces();
+  updateStatus();
+  refreshHighlights();
 })();

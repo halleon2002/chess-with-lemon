@@ -261,6 +261,14 @@
 
   CK._finishTurn = function (opts) {
     opts = opts || {};
+    if (opts.kind === "plain" && opts.from && opts.to) {
+      recordLastMove(opts.from, opts.to);
+    } else if (opts.kind === "capture" && opts.from && opts.steps && opts.steps.length) {
+      const last = opts.steps[opts.steps.length - 1].landing;
+      recordLastMove(opts.from, last);
+    } else if (opts.from && opts.to) {
+      recordLastMove(opts.from, opts.to);
+    }
     if (mode === "online" && opts.broadcast && conn && conn.open) {
       if (opts.kind === "plain") conn.send({ type: "ckPlain", from: opts.from, to: opts.to });
       else if (opts.kind === "capture") conn.send({ type: "ckCapture", from: opts.from, steps: opts.steps });
@@ -282,13 +290,13 @@
       const result = CK.applyPlainMove(board, move.from, move.to);
       animateMove(move.from, move.to);
       if (result.promoted) setTimeout(() => refreshPieceAt(move.to), 280);
-      CK._finishTurn({ broadcast: false });
+      CK._finishTurn({ broadcast: false, kind: "plain", from: move.from, to: move.to });
     } else {
       let cur = move.from;
       for (const step of move.chain) { CK.applyCapture(board, cur, step); cur = step.landing; }
       const finalPos = move.chain[move.chain.length - 1].landing;
       animateChainCaptures(move.from, move.chain, () => {
-        refreshPieceAt(finalPos); CK._finishTurn({ broadcast: false });
+        refreshPieceAt(finalPos); CK._finishTurn({ broadcast: false, kind: "capture", from: move.from, steps: move.chain });
       });
     }
   };
@@ -298,13 +306,13 @@
       const result = CK.applyPlainMove(board, msg.from, msg.to);
       animateMove(msg.from, msg.to);
       if (result.promoted) setTimeout(() => refreshPieceAt(msg.to), 280);
-      CK._finishTurn({ broadcast: false });
+      CK._finishTurn({ broadcast: false, kind: "plain", from: msg.from, to: msg.to });
     } else if (msg.type === "ckCapture") {
       let cur = msg.from;
       for (const step of msg.steps) { CK.applyCapture(board, cur, step); cur = step.landing; }
       const finalPos = msg.steps[msg.steps.length - 1].landing;
       animateChainCaptures(msg.from, msg.steps, () => {
-        refreshPieceAt(finalPos); CK._finishTurn({ broadcast: false });
+        refreshPieceAt(finalPos); CK._finishTurn({ broadcast: false, kind: "capture", from: msg.from, steps: msg.steps });
       });
     }
   };

@@ -410,13 +410,14 @@
     font-size: 0.82rem;
   }
 
-  /* Landing page: only chooser visible */
-  body.landing .status-bar,
-  body.landing .board-wrap,
-  body.landing .controls,
-  body.landing .rules-note {
-    display: none !important;
-  }
-  body.landing .subtitle {
-    margin-bottom: 8px;
-  }
+/* Last move highlight (lattice games) */
+.point-dot.last-from {
+  fill: rgba(244, 192, 99, 0.45) !important;
+  stroke: rgba(244, 192, 99, 0.7);
+  stroke-width: 2;
+}
+.point-dot.last-to {
+  fill: rgba(244, 192, 99, 0.7) !important;
+  stroke: var(--selected);
+  stroke-width: 2.5;
+}

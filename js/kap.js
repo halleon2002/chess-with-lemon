@@ -146,7 +146,10 @@
 
   KAP._afterMove = function (opts) {
     opts = opts || {};
-    if (opts.from && opts.to) animateMove(opts.from, opts.to);
+    if (opts.from && opts.to) {
+      recordLastMove(opts.from, opts.to);
+      animateMove(opts.from, opts.to);
+    }
     if (opts.captured) for (const c of opts.captured) animateCapture(c);
     if (mode === "online" && opts.broadcast && conn && conn.open) {
       conn.send({ type: "kapMove", from: opts.from, to: opts.to });
