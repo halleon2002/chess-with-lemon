@@ -142,7 +142,11 @@ async function preloadPieceImages() {
     g.appendChild(ring);
     const img = document.createElementNS(NS, "image");
     const size = 50;
-    img.setAttribute("href", pieceImageCache[piece.type].src);
+    // Use the GIF path directly so animation keeps playing in SVG
+    const src = (CT_PIECE_IMAGES && CT_PIECE_IMAGES[piece.type])
+      || (pieceImageCache[piece.type] && pieceImageCache[piece.type].src)
+      || "";
+    img.setAttribute("href", src.trim());
     img.setAttribute("x", -size/2); img.setAttribute("y", -size/2);
     img.setAttribute("width", size); img.setAttribute("height", size);
     g.appendChild(img);
