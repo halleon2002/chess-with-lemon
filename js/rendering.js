@@ -43,26 +43,201 @@
   svg.appendChild(ctGridLayer);
   svg.appendChild(ctPieceLayer);
   svg.appendChild(ctHitLayer);
+  ctTerrainLayer.style.display = "none";
+  ctGridLayer.style.display = "none";
+  ctPieceLayer.style.display = "none";
+  ctHitLayer.style.display = "none";
 
   const ctPointEls = {};
   let ctBoardBuilt = false;
 
-  function setBoardMode(isGrid) {
-    const latDisplay = isGrid ? "none" : "";
-    const ctDisplay = isGrid ? "" : "none";
-    lineLayer.style.display = latDisplay; dotLayer.style.display = latDisplay;
-    pieceLayer.style.display = latDisplay; hitLayer.style.display = latDisplay;
-    ctTerrainLayer.style.display = ctDisplay; ctGridLayer.style.display = ctDisplay;
-    ctPieceLayer.style.display = ctDisplay; ctHitLayer.style.display = ctDisplay;
-    svg.setAttribute("viewBox", isGrid ? `0 0 ${CT_VIEW_W} ${CT_VIEW_H}` : "0 0 450 450");
-    if (isGrid && !ctBoardBuilt) { buildCoThuBoard(); ctBoardBuilt = true; }
+  // ---- Chess (8x8) rendering layers ----
+  const CHESS_CELL = 54, CHESS_PAD = 12;
+  const CHESS_VIEW = 8 * CHESS_CELL + CHESS_PAD * 2;
+  function chessCoordX(col) { return CHESS_PAD + col * CHESS_CELL + CHESS_CELL / 2; }
+  function chessCoordY(row) { return CHESS_PAD + row * CHESS_CELL + CHESS_CELL / 2; }
+
+  const chessSquareLayer = document.createElementNS(NS, "g");
+  const chessPieceLayer = document.createElementNS(NS, "g");
+  const chessHitLayer = document.createElementNS(NS, "g");
+  svg.appendChild(chessSquareLayer);
+  svg.appendChild(chessPieceLayer);
+  svg.appendChild(chessHitLayer);
+  chessSquareLayer.style.display = "none";
+  chessPieceLayer.style.display = "none";
+  chessHitLayer.style.display = "none";
+
+  const chessPointEls = {};
+  let chessBoardBuilt = false;
+
+  // mode: "lattice" | "cothu" | "chess"
+  function setBoardMode(mode) {
+    if (mode === true) mode = "cothu";
+    if (mode === false) mode = "lattice";
+
+    const lat = mode === "lattice" ? "" : "none";
+    const ct = mode === "cothu" ? "" : "none";
+    const ch = mode === "chess" ? "" : "none";
+
+    lineLayer.style.display = lat; dotLayer.style.display = lat;
+    pieceLayer.style.display = lat; hitLayer.style.display = lat;
+    ctTerrainLayer.style.display = ct; ctGridLayer.style.display = ct;
+    ctPieceLayer.style.display = ct; ctHitLayer.style.display = ct;
+    chessSquareLayer.style.display = ch; chessPieceLayer.style.display = ch; chessHitLayer.style.display = ch;
+
+    if (mode === "cothu") svg.setAttribute("viewBox", `0 0 ${CT_VIEW_W} ${CT_VIEW_H}`);
+    else if (mode === "chess") svg.setAttribute("viewBox", `0 0 ${CHESS_VIEW} ${CHESS_VIEW}`);
+    else svg.setAttribute("viewBox", "0 0 450 450");
+
+    if (mode === "cothu" && !ctBoardBuilt) { buildCoThuBoard(); ctBoardBuilt = true; }
+    if (mode === "chess" && !chessBoardBuilt) { buildChessBoard(); chessBoardBuilt = true; }
   }
 
   function renderBoard() {
-    const isGrid = !!G().isGrid;
-    setBoardMode(isGrid);
-    if (isGrid) ctSyncPieces();
+    const mode = (G().boardMode) || (G().isGrid ? "cothu" : "lattice");
+    setBoardMode(mode);
+    if (mode === "cothu") ctSyncPieces();
+    else if (mode === "chess") chessSyncPieces();
     else syncPieces();
+  }
+
+  function buildChessBoard() {
+    for (const p of chessAllPoints()) {
+      const x = CHESS_PAD + p.x * CHESS_CELL, y = CHESS_PAD + p.y * CHESS_CELL;
+      const isLight = (p.x + p.y) % 2 === 0;
+      const sq = document.createElementNS(NS, "rect");
+      sq.setAttribute("x", x); sq.setAttribute("y", y);
+      sq.setAttribute("width", CHESS_CELL); sq.setAttribute("height", CHESS_CELL);
+      sq.setAttribute("fill", isLight ? "#3a4150" : "#232a36");
+      chessSquareLayer.appendChild(sq);
+
+      const hit = document.createElementNS(NS, "rect");
+      hit.setAttribute("x", x); hit.setAttribute("y", y);
+      hit.setAttribute("width", CHESS_CELL); hit.setAttribute("height", CHESS_CELL);
+      hit.setAttribute("fill", "transparent");
+      hit.setAttribute("class", "point-hit");
+      hit.addEventListener("click", () => onPointClicked(p));
+      chessHitLayer.appendChild(hit);
+
+      chessPointEls[p.x+","+p.y] = { hit, pieceGroup: null };
+    }
+  }
+
+  function chessMakePieceShape(piece) {
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", "piece-group");
+    const img = document.createElementNS(NS, "image");
+    const size = 44;
+    const key = piece.owner + "_" + piece.type;
+    const src = (typeof CHESS_PIECE_IMAGES !== "undefined" && CHESS_PIECE_IMAGES[key])
+      ? CHESS_PIECE_IMAGES[key]
+      : ("images/" + (piece.owner === "white" ? "w" : "b") + piece.type[0] + ".png");
+    img.setAttribute("href", src);
+    img.setAttribute("x", -size/2); img.setAttribute("y", -size/2);
+    img.setAttribute("width", size); img.setAttribute("height", size);
+    g.appendChild(img);
+    return g;
+  }
+
+  function chessPlaceGroupAt(group, point, animate) {
+    const cx = chessCoordX(point.x), cy = chessCoordY(point.y);
+    group.style.transition = animate ? "transform 0.28s ease" : "none";
+    group.style.transform = `translate(${cx}px, ${cy}px)`;
+  }
+
+  function chessSyncPieces() {
+    for (const p of chessAllPoints()) {
+      const entry = chessPointEls[p.x+","+p.y];
+      if (entry.pieceGroup) { chessPieceLayer.removeChild(entry.pieceGroup); entry.pieceGroup = null; }
+      const piece = getPiece(board, p);
+      if (!piece) continue;
+      const group = chessMakePieceShape(piece);
+      chessPlaceGroupAt(group, p, false);
+      chessPieceLayer.appendChild(group);
+      entry.pieceGroup = group;
+    }
+  }
+
+  function chessAnimateMove(from, to) {
+    const fromEntry = chessPointEls[from.x+","+from.y];
+    const toEntry = chessPointEls[to.x+","+to.y];
+    const group = fromEntry.pieceGroup;
+    fromEntry.pieceGroup = null;
+    if (!group) return;
+    if (toEntry.pieceGroup) {
+      const captured = toEntry.pieceGroup;
+      toEntry.pieceGroup = null;
+      captured.style.transition = "opacity 0.25s ease, transform 0.25s ease";
+      captured.style.opacity = "0";
+      const cx = chessCoordX(to.x), cy = chessCoordY(to.y);
+      captured.style.transform = `translate(${cx}px, ${cy}px) scale(0.2)`;
+      setTimeout(() => { if (captured.parentNode) chessPieceLayer.removeChild(captured); }, 260);
+    }
+    toEntry.pieceGroup = group;
+    chessPlaceGroupAt(group, to, true);
+  }
+
+  function chessAnimateSideCapture(at) {
+    const entry = chessPointEls[at.x+","+at.y];
+    const group = entry.pieceGroup;
+    entry.pieceGroup = null;
+    if (!group) return;
+    group.style.transition = "opacity 0.25s ease, transform 0.25s ease";
+    group.style.opacity = "0";
+    const cx = chessCoordX(at.x), cy = chessCoordY(at.y);
+    group.style.transform = `translate(${cx}px, ${cy}px) scale(0.2)`;
+    setTimeout(() => { if (group.parentNode) chessPieceLayer.removeChild(group); }, 260);
+  }
+
+  function chessAnimateCastleRook(isCastle, row) {
+    if (!isCastle) return;
+    const from = isCastle === "king" ? {x:7,y:row} : {x:0,y:row};
+    const to = isCastle === "king" ? {x:5,y:row} : {x:3,y:row};
+    chessAnimateMove(from, to);
+  }
+
+  function chessRefreshPieceAt(point) {
+    const entry = chessPointEls[point.x+","+point.y];
+    if (entry.pieceGroup) { chessPieceLayer.removeChild(entry.pieceGroup); entry.pieceGroup = null; }
+    const piece = getPiece(board, point);
+    if (!piece) return;
+    const group = chessMakePieceShape(piece);
+    chessPlaceGroupAt(group, point, false);
+    chessPieceLayer.appendChild(group);
+    entry.pieceGroup = group;
+  }
+
+  function chessRefreshHighlights() {
+    let dests = [];
+    if (selected) dests = CHESS.getLegalMoves(board, selected, chessState).map(m => m.to);
+    const humanTurn = isHumanTurn();
+
+    for (const p of chessAllPoints()) {
+      const entry = chessPointEls[p.x+","+p.y];
+      const isSelected = selected && samePoint(selected, p);
+      const isDest = dests.some(m => samePoint(m, p));
+      if (entry._marker) { entry.hit.parentNode && chessHitLayer.removeChild(entry._marker); entry._marker = null; }
+      if (isSelected || isDest) {
+        const marker = document.createElementNS(NS, "circle");
+        marker.setAttribute("cx", chessCoordX(p.x));
+        marker.setAttribute("cy", chessCoordY(p.y));
+        marker.setAttribute("r", isSelected ? 25 : 8);
+        marker.setAttribute("fill", isSelected ? "none" : "var(--legal)");
+        marker.setAttribute("stroke", isSelected ? "var(--selected)" : "none");
+        marker.setAttribute("stroke-width", "3");
+        marker.style.pointerEvents = "none";
+        chessHitLayer.insertBefore(marker, entry.hit);
+        entry._marker = marker;
+      }
+
+      const piece = getPiece(board, p);
+      let clickable = !isGameOver && humanTurn;
+      if (clickable) {
+        if (piece && piece.owner === currentTurn) clickable = true;
+        else clickable = isDest;
+      }
+      entry.hit.classList.toggle("clickable", !!clickable);
+    }
   }
 
 
@@ -104,38 +279,34 @@
 const pieceImageCache = {};
 
 async function preloadPieceImages() {
+
     const tasks = [];
+
     for (const [type, src] of Object.entries(CT_PIECE_IMAGES)) {
-      const img = new Image();
-      pieceImageCache[type] = img;
-      tasks.push(new Promise(resolve => {
-        img.onload = () => resolve();
-        img.onerror = () => {
-          // Try PNG fallback, then give up
-          const fb = (typeof CT_PIECE_FALLBACKS !== "undefined") && CT_PIECE_FALLBACKS[type];
-          if (fb) {
-            img.onload = () => resolve();
-            img.onerror = () => {
-              console.warn("[Cờ Thú] Failed to load piece image:", type, src, "and fallback", fb);
-              resolve();
-            };
-            img.src = fb;
-            CT_PIECE_IMAGES[type] = fb;
-          } else {
-            console.warn("[Cờ Thú] Failed to load piece image:", type, src);
-            resolve();
-          }
-        };
+
+        const img = new Image();
+
         img.src = src;
-      }));
+
+        pieceImageCache[type] = img;
+
+        tasks.push(
+            new Promise(resolve => {
+                img.onload = resolve;
+                img.onerror = resolve;
+            })
+        );
     }
+
     await Promise.all(tasks);
+
+    // Force browser to decode every image
     await Promise.all(
-      Object.values(pieceImageCache).map(img =>
-        img.decode ? img.decode().catch(() => {}) : Promise.resolve()
-      )
+        Object.values(pieceImageCache).map(img =>
+            img.decode ? img.decode().catch(() => {}) : Promise.resolve()
+        )
     );
-  }
+}
 
   function ctMakePieceShape(piece) {
     const g = document.createElementNS(NS, "g");
@@ -145,42 +316,59 @@ async function preloadPieceImages() {
     const fill = isTop ? "var(--king)" : "var(--pawn)";
     const glow = isTop ? "var(--king-glow)" : "var(--pawn-glow)";
 
-    // Outer bold ring (team color) — easy to see at a glance
+    // Proportions: outer ring stays bold; GIF is clipped to stay inside
+    const OUTER_R = 28;
+    const RING_STROKE = 3.5;
+    const INNER_R = 22;   // dark socket for the GIF
+    const IMG_SIZE = 40;  // must be < INNER_R * 2 so it fits in the circle
+
+    // Bold team ring
     const outer = document.createElementNS(NS, "circle");
     outer.setAttribute("cx", "0");
     outer.setAttribute("cy", "0");
-    outer.setAttribute("r", "29");
+    outer.setAttribute("r", String(OUTER_R));
     outer.setAttribute("fill", fill);
     outer.setAttribute("stroke", glow);
-    outer.setAttribute("stroke-width", "4");
+    outer.setAttribute("stroke-width", String(RING_STROKE));
     outer.style.filter = isTop
       ? "drop-shadow(0 0 5px rgba(244,192,99,0.85))"
       : "drop-shadow(0 0 5px rgba(125,179,238,0.85))";
     g.appendChild(outer);
 
-    // Dark inner rim so the GIF sits in a clear "socket"
+    // Dark socket behind the animal
     const inner = document.createElementNS(NS, "circle");
     inner.setAttribute("cx", "0");
     inner.setAttribute("cy", "0");
-    inner.setAttribute("r", "24");
+    inner.setAttribute("r", String(INNER_R));
     inner.setAttribute("fill", "#1a2030");
-    inner.setAttribute("stroke", "rgba(255,255,255,0.25)");
-    inner.setAttribute("stroke-width", "1.5");
     g.appendChild(inner);
 
-    const size = 46;
     let src = (CT_PIECE_IMAGES && CT_PIECE_IMAGES[piece.type]) || "";
     src = (src || "").trim();
 
     if (src) {
+      // Clip GIF to a circle so corners never spill outside the ring
+      const clipId = "ct-clip-" + piece.type + "-" + piece.owner + "-" + Math.random().toString(36).slice(2, 7);
+      const defs = document.createElementNS(NS, "defs");
+      const clip = document.createElementNS(NS, "clipPath");
+      clip.setAttribute("id", clipId);
+      const clipCircle = document.createElementNS(NS, "circle");
+      clipCircle.setAttribute("cx", "0");
+      clipCircle.setAttribute("cy", "0");
+      clipCircle.setAttribute("r", String(INNER_R - 1));
+      clip.appendChild(clipCircle);
+      defs.appendChild(clip);
+      g.appendChild(defs);
+
       const img = document.createElementNS(NS, "image");
       img.setAttributeNS("http://www.w3.org/1999/xlink", "href", src);
       img.setAttribute("href", src);
-      img.setAttribute("x", -size / 2);
-      img.setAttribute("y", -size / 2);
-      img.setAttribute("width", size);
-      img.setAttribute("height", size);
+      img.setAttribute("x", String(-IMG_SIZE / 2));
+      img.setAttribute("y", String(-IMG_SIZE / 2));
+      img.setAttribute("width", String(IMG_SIZE));
+      img.setAttribute("height", String(IMG_SIZE));
       img.setAttribute("preserveAspectRatio", "xMidYMid meet");
+      img.setAttribute("clip-path", "url(#" + clipId + ")");
       g.appendChild(img);
     } else {
       const t = document.createElementNS(NS, "text");
@@ -425,6 +613,7 @@ async function preloadPieceImages() {
 
   function refreshHighlights() {
     if (activeGame === "cothu") { ctRefreshHighlights(); return; }
+    if (activeGame === "chess") { chessRefreshHighlights(); return; }
 
     let plainDests = [], captureDests = [];
     if (selected) {
@@ -511,9 +700,12 @@ async function preloadPieceImages() {
     } else if (activeGame === "checkers") {
       const w = getPiecesOf(board, "white").length, bl = getPiecesOf(board, "black").length;
       pieceCountLabel.textContent = t("whiteBlackCount", w, bl);
-    } else {
+    } else if (activeGame === "cothu") {
       const top = ctGetPiecesOf(board, "top").length, bo = ctGetPiecesOf(board, "bottom").length;
       pieceCountLabel.textContent = t("topBottomCount", top, bo);
+    } else {
+      const w = chessGetPiecesOf(board, "white").length, bl = chessGetPiecesOf(board, "black").length;
+      pieceCountLabel.textContent = t("whiteBlackCount", w, bl);
     }
   }
 
@@ -545,9 +737,19 @@ async function preloadPieceImages() {
       overlaySubtitle.textContent = winner === "king" ? t("kapWinAllPawns") : t("kapWinTrapped");
     } else if (activeGame === "checkers") {
       overlaySubtitle.textContent = t("noMovesLeft");
-    } else {
+    } else if (activeGame === "cothu") {
       overlaySubtitle.textContent = lastCtWinWasDen ? t("cothuWinDen") : t("noMovesLeft");
+    } else {
+      overlaySubtitle.textContent = t("chessCheckmate");
     }
+    renderScoreLine();
+  }
+
+  function showDraw() {
+    overlay.classList.add("show");
+    overlayTitle.textContent = t("drawTitle");
+    overlayTitle.className = "";
+    overlaySubtitle.textContent = t("chessStalemate");
     renderScoreLine();
   }
 
