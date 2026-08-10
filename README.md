@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+This game is build for my little Lemon
+There are 3 type of chess and maybe more and more will be add, thank you for playing !
+=======
 # Lemon Together
 
 Board games built for my little lemon.
@@ -24,3 +28,4 @@ Modes: AI, Local 2-player, Online (PeerJS)
 | `js/app.js` | Thin orchestrator: shared state, mode screens, wiring |
 
 Each game module owns its own click handling, turn finishing, AI, and remote-move application. Adding a new game means implementing the same Controller API and registering it in `GAMES`.
+>>>>>>> babf772d42d892fff989d82d803a470ff86cf885
