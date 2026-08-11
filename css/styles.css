@@ -98,6 +98,41 @@
 
   .controls { margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
 
+/* ================= CỜ THÚ - water ================= */
+
+.ct-river-water {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: riverWaterMove 4s ease-in-out infinite;
+}
+
+@keyframes riverWaterMove {
+    0% {
+        transform: scale(1);
+        opacity: 0.90;
+    }
+
+    25% {
+        transform: translate(-0.8px, 0.4px) scale(1.01);
+        opacity: 1;
+    }
+
+    50% {
+        transform: translate(-1.5px, 0) scale(1.02);
+        opacity: 0.94;
+    }
+
+    75% {
+        transform: translate(-0.8px, -0.4px) scale(1.01);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 0.90;
+    }
+}
+
   button {
     font-family: 'Cinzel', serif;
     font-size: 0.9rem;

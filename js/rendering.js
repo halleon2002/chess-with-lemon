@@ -277,18 +277,61 @@
   }
 
 
+  function ctTerrainSrc(kind) {
+    if (typeof CT_TERRAIN_IMAGES !== "undefined" && CT_TERRAIN_IMAGES[kind]) {
+      return CT_TERRAIN_IMAGES[kind];
+    }
+    return null;
+  }
+
   function buildCoThuBoard() {
     for (const p of ctAllPoints()) {
       const x = CT_PAD_X + p.x * CT_CELL, y = CT_PAD_Y + p.y * CT_CELL;
+
+      // Base cell (transparent — background can show through)
       const rect = document.createElementNS(NS, "rect");
       rect.setAttribute("x", x); rect.setAttribute("y", y);
       rect.setAttribute("width", CT_CELL); rect.setAttribute("height", CT_CELL);
-      let fill = "transparent";
-      if (ctIsRiver(p)) fill = "rgba(79,143,209,0.35)";
-      else if (ctDenOwnerAt(p)) fill = "rgba(217,151,63,0.45)";
-      else if (ctTrapOwnerAt(p)) fill = "rgba(224,122,74,0.3)";
-      rect.setAttribute("fill", fill);
+      rect.setAttribute("fill", "transparent");
       ctTerrainLayer.appendChild(rect);
+
+      // Terrain image (river / den / trap) or color fallback if file missing
+      let kind = null;
+      let fallback = null;
+      if (ctIsRiver(p)) { kind = "river"; fallback = "rgba(79,143,209,0.35)"; }
+      else if (ctDenOwnerAt(p)) { kind = "den"; fallback = "rgba(217,151,63,0.45)"; }
+      else if (ctTrapOwnerAt(p)) { kind = "trap"; fallback = "rgba(224,122,74,0.3)"; }
+
+      if (kind) {
+        const src = ctTerrainSrc(kind);
+        if (src) {
+          const img = document.createElementNS(NS, "image");
+          img.setAttributeNS("http://www.w3.org/1999/xlink", "href", src);
+          img.setAttribute("href", src);
+          img.setAttribute("x", x);
+          img.setAttribute("y", y);
+          img.setAttribute("width", CT_CELL);
+          img.setAttribute("height", CT_CELL);
+          img.setAttribute("preserveAspectRatio", "none");
+          img.style.pointerEvents = "none";
+		  if (kind === "river") {
+			img.classList.add("ct-river-water");
+}
+          // If image fails to load, leave a color underlay
+          const under = document.createElementNS(NS, "rect");
+          under.setAttribute("x", x); under.setAttribute("y", y);
+          under.setAttribute("width", CT_CELL); under.setAttribute("height", CT_CELL);
+          under.setAttribute("fill", fallback);
+          ctTerrainLayer.appendChild(under);
+          ctTerrainLayer.appendChild(img);
+        } else {
+          const fillRect = document.createElementNS(NS, "rect");
+          fillRect.setAttribute("x", x); fillRect.setAttribute("y", y);
+          fillRect.setAttribute("width", CT_CELL); fillRect.setAttribute("height", CT_CELL);
+          fillRect.setAttribute("fill", fallback);
+          ctTerrainLayer.appendChild(fillRect);
+        }
+      }
 
       const border = document.createElementNS(NS, "rect");
       border.setAttribute("x", x); border.setAttribute("y", y);
