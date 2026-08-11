@@ -349,21 +349,6 @@ CHESS.chooseAIMove = function (board, side, chessState, depth) {
   return { from: pick.from, to: pick.move.to };
 };
 
-const CHESS_PIECE_IMAGES = {
-  white_king: "images/chess_white_king.png",
-  white_queen: "images/chess_white_queen.png",
-  white_rook: "images/chess_white_rook.png",
-  white_bishop: "images/chess_white_bishop.png",
-  white_knight: "images/chess_white_knight.png",
-  white_pawn: "images/chess_white_pawn.png",
-  black_king: "images/chess_black_king.png",
-  black_queen: "images/chess_black_queen.png",
-  black_rook: "images/chess_black_rook.png",
-  black_bishop: "images/chess_black_bishop.png",
-  black_knight: "images/chess_black_knight.png",
-  black_pawn: "images/chess_black_pawn.png"
-};
-
 
 // ---- Controller API ----
 CHESS.getLegalPlain = function (point) {
