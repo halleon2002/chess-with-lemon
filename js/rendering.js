@@ -108,7 +108,10 @@
       const sq = document.createElementNS(NS, "rect");
       sq.setAttribute("x", x); sq.setAttribute("y", y);
       sq.setAttribute("width", CHESS_CELL); sq.setAttribute("height", CHESS_CELL);
-      sq.setAttribute("fill", isLight ? "#3a4150" : "#232a36");
+      // Invisible board — background shows through; faint line so squares stay readable
+      sq.setAttribute("fill", "transparent");
+      sq.setAttribute("stroke", "rgba(238, 230, 212, 0.22)");
+      sq.setAttribute("stroke-width", "1");
       chessSquareLayer.appendChild(sq);
 
       const hit = document.createElementNS(NS, "rect");
@@ -644,6 +647,28 @@ async function preloadPieceImages() {
     return currentModule().getLegalCaptures(point);
   }
 
+
+  // Ring around the checkers piece that just moved
+  function updateCheckersLastMoveRing(entry, p) {
+    if (!entry || !entry.pieceGroup) return;
+    const g = entry.pieceGroup;
+    let ring = g.querySelector(".ck-last-move-ring");
+    const show = activeGame === "checkers" && lastMove && samePoint(lastMove.to, p);
+    if (show) {
+      if (!ring) {
+        ring = document.createElementNS(NS, "circle");
+        ring.setAttribute("class", "ck-last-move-ring");
+        ring.setAttribute("cx", "0");
+        ring.setAttribute("cy", "0");
+        ring.setAttribute("r", "20");
+        ring.setAttribute("fill", "none");
+        g.appendChild(ring);
+      }
+    } else if (ring) {
+      ring.remove();
+    }
+  }
+
   function refreshHighlights() {
     if (activeGame === "cothu") { ctRefreshHighlights(); return; }
     if (activeGame === "chess") { chessRefreshHighlights(); return; }
@@ -681,6 +706,7 @@ async function preloadPieceImages() {
         }
       }
       entry.hit.classList.toggle("clickable", !!clickable);
+      updateCheckersLastMoveRing(entry, p);
     }
   }
 

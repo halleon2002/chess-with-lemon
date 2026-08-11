@@ -421,3 +421,42 @@
   stroke: var(--selected);
   stroke-width: 2.5;
 }
+
+
+/* Ring around the checkers piece that just moved */
+.ck-last-move-ring {
+  stroke: var(--selected);
+  stroke-width: 3;
+  fill: none;
+  pointer-events: none;
+  filter: drop-shadow(0 0 5px rgba(244, 192, 99, 0.9));
+}
+
+
+/* ========== Landing / home screen ========== */
+body.landing {
+  /* Put your image at: images/home-bg.png  (or .jpg / .webp) */
+  background:
+    linear-gradient(rgba(10, 12, 16, 0.55), rgba(10, 12, 16, 0.72)),
+    url("../images/home-bg.png") center center / cover no-repeat fixed;
+  background-color: var(--bg);
+}
+
+body.landing .status-bar,
+body.landing .board-wrap,
+body.landing .controls,
+body.landing .rules-note {
+  display: none !important;
+}
+
+body.landing .subtitle {
+  margin-bottom: 8px;
+}
+
+/* Same image during gameplay; slightly stronger dim so the board stays clear */
+body.playing {
+  background:
+    linear-gradient(rgba(10, 12, 16, 0.68), rgba(10, 12, 16, 0.82)),
+    url("../images/home-bg.png") center center / cover no-repeat fixed;
+  background-color: var(--bg);
+}
