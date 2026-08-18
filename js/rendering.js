@@ -109,7 +109,7 @@
       sq.setAttribute("x", x); sq.setAttribute("y", y);
       sq.setAttribute("width", CHESS_CELL); sq.setAttribute("height", CHESS_CELL);
       // Invisible board — background shows through; faint line so squares stay readable
-      sq.setAttribute("fill", "transparent");
+      sq.setAttribute("fill", isLight ? "#FFFFFF" : "#FFB6C1");
       sq.setAttribute("stroke", "rgba(238, 230, 212, 0.22)");
       sq.setAttribute("stroke-width", "1");
       chessSquareLayer.appendChild(sq);
