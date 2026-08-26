@@ -2,10 +2,10 @@
 // (Firebase console → Project settings → General → Your apps → SDK setup).
 // It's safe to commit/publish — these are public client identifiers, not secrets.
 const firebaseConfig = {
-  apiKey: "PASTE_API_KEY_HERE",
-  authDomain: "PASTE_PROJECT_ID.firebaseapp.com",
-  projectId: "PASTE_PROJECT_ID",
-  storageBucket: "PASTE_PROJECT_ID.appspot.com",
+  apiKey: "AIzaSyAtfq6nwzc7-y0wpakjLBLTwnihXkX5V1k",
+  authDomain: "chess-with-lemon.firebaseapp.com",
+  projectId: "chess-with-lemon",
+  storageBucket: "chess-with-lemon.appspot.com",
   messagingSenderId: "PASTE_SENDER_ID",
   appId: "PASTE_APP_ID"
 };
