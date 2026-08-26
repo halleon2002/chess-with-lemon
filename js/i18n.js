@@ -59,7 +59,20 @@
       chatConnectedNotice: "You're connected — say hi!",
       chessCheckmate: "Checkmate.",
       chessStalemate: "Stalemate — no legal moves and not in check.",
-      drawTitle: "Draw!"
+      drawTitle: "Draw!",
+      authLoginTitle: "Log in",
+      authSignupTitle: "Create account",
+      authLoginBtn: "Log in",
+      authSignupBtn: "Sign up",
+      authToggleToSignup: "Need an account? Sign up",
+      authToggleToLogin: "Already have an account? Log in",
+      authEmailPlaceholder: "Email",
+      authPasswordPlaceholder: "Password",
+      authErrInvalidEmail: "That email address doesn't look right.",
+      authErrBadCredentials: "Wrong email or password.",
+      authErrEmailInUse: "An account already exists for that email.",
+      authErrWeakPassword: "Password should be at least 6 characters.",
+      logoutBtn: "Log out"
     },
     vi: {
       appTitle: "Trò Chơi Cờ",
@@ -118,7 +131,20 @@
       chatConnectedNotice: "Bạn đã kết nối — chào hỏi nhau nào!",
       chessCheckmate: "Chiếu bí.",
       chessStalemate: "Hòa cờ — hết nước đi hợp lệ và không bị chiếu.",
-      drawTitle: "Hòa!"
+      drawTitle: "Hòa!",
+      authLoginTitle: "Đăng nhập",
+      authSignupTitle: "Tạo tài khoản",
+      authLoginBtn: "Đăng nhập",
+      authSignupBtn: "Đăng ký",
+      authToggleToSignup: "Chưa có tài khoản? Đăng ký",
+      authToggleToLogin: "Đã có tài khoản? Đăng nhập",
+      authEmailPlaceholder: "Email",
+      authPasswordPlaceholder: "Mật khẩu",
+      authErrInvalidEmail: "Địa chỉ email không hợp lệ.",
+      authErrBadCredentials: "Sai email hoặc mật khẩu.",
+      authErrEmailInUse: "Email này đã được đăng ký.",
+      authErrWeakPassword: "Mật khẩu cần ít nhất 6 ký tự.",
+      logoutBtn: "Đăng xuất"
     }
   };
 
