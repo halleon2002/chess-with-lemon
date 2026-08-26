@@ -8,6 +8,7 @@ let selected = null;
 let isGameOver = false;
 let humanSide = "king";
 let mode = "ai"; // "ai" | "local" | "online"
+let boardFlipped = false; // true when the board is rotated 180° so humanSide renders at the bottom
 
 // Checkers multi-jump bookkeeping
 let ckPendingFrom = null;
@@ -30,6 +31,13 @@ let lastMove = null; // { from: {x,y}, to: {x,y} } — last played move highligh
 function recordLastMove(from, to) {
   if (from && to) lastMove = { from: { x: from.x, y: from.y }, to: { x: to.x, y: to.y } };
   else lastMove = null;
+}
+
+// Whichever side the local player is on should always render at the bottom of
+// the board — flip (rotate) the board 180° whenever humanSide isn't the side
+// that naturally sits at the bottom for the current game.
+function computeBoardFlipped() {
+  return humanSide !== G().bottomSide;
 }
 
 function isHumanTurn() {
@@ -60,6 +68,9 @@ function aiMove(side) {
 function resetBoardLocal() {
   const g = G();
   setBoardMode(g.boardMode || "lattice");
+  boardFlipped = computeBoardFlipped();
+  svg.classList.toggle("board-flipped", boardFlipped);
+  updateCtDenRotation();
   board = currentModule().createBoard();
   currentTurn = g.firstTurn;
   selected = null;

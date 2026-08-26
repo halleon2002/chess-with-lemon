@@ -49,6 +49,8 @@
   ctHitLayer.style.display = "none";
 
   const ctPointEls = {};
+  const ctDenImages = [];
+  const ctTrapImages = [];
   let ctBoardBuilt = false;
 
   // ---- Chess (8x8) rendering layers ----
@@ -145,7 +147,7 @@
   function chessPlaceGroupAt(group, point, animate) {
     const cx = chessCoordX(point.x), cy = chessCoordY(point.y);
     group.style.transition = animate ? "transform 0.28s ease" : "none";
-    group.style.transform = `translate(${cx}px, ${cy}px)`;
+    group.style.transform = `translate(${cx}px, ${cy}px)` + (boardFlipped ? " rotate(180deg)" : "");
   }
 
   function chessSyncPieces() {
@@ -317,6 +319,14 @@
 		  if (kind === "river") {
 			img.classList.add("ct-river-water");
 }
+		  if (kind === "den") {
+			img.classList.add("ct-den-img");
+			ctDenImages.push(img);
+}
+		  if (kind === "trap") {
+			img.classList.add("ct-trap-img");
+			ctTrapImages.push(img);
+}
           // If image fails to load, leave a color underlay
           const under = document.createElementNS(NS, "rect");
           under.setAttribute("x", x); under.setAttribute("y", y);
@@ -351,6 +361,14 @@
 
       ctPointEls[p.x+","+p.y] = { hit, pieceGroup: null };
     }
+  }
+
+  // Den and trap images stay upright and facing the middle of the board even
+  // when the whole board is rotated 180° for the other player's perspective.
+  function updateCtDenRotation() {
+    const t = boardFlipped ? "rotate(180deg)" : "";
+    for (const img of ctDenImages) img.style.transform = t;
+    for (const img of ctTrapImages) img.style.transform = t;
   }
 
   
@@ -465,7 +483,7 @@ async function preloadPieceImages() {
   function ctPlaceGroupAt(group, point, animate) {
     const cx = ctCoordX(point.x), cy = ctCoordY(point.y);
     group.style.transition = animate ? "transform 0.28s ease" : "none";
-    group.style.transform = `translate(${cx}px, ${cy}px)`;
+    group.style.transform = `translate(${cx}px, ${cy}px)` + (boardFlipped ? " rotate(180deg)" : "");
   }
 
   function ctSyncPieces() {
@@ -613,7 +631,7 @@ async function preloadPieceImages() {
   function placeGroupAt(group, point, animate) {
     const cx = coord(point.x), cy = coord(point.y);
     group.style.transition = animate ? "transform 0.28s ease" : "none";
-    group.style.transform = `translate(${cx}px, ${cy}px)`;
+    group.style.transform = `translate(${cx}px, ${cy}px)` + (boardFlipped ? " rotate(180deg)" : "");
   }
 
   // Full (non-animated) rebuild of every piece from the current board state.

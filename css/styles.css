@@ -77,6 +77,7 @@
   }
 
   svg#board { width: 100%; height: auto; display: block; }
+svg#board.board-flipped { transform: rotate(180deg); transform-origin: center; }
 
   .point-hit { cursor: default; }
   .point-hit.clickable { cursor: pointer; }
@@ -104,6 +105,16 @@
     transform-box: fill-box;
     transform-origin: center;
     animation: riverWaterMove 4s ease-in-out infinite;
+}
+
+.ct-den-img {
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+.ct-trap-img {
+    transform-box: fill-box;
+    transform-origin: center;
 }
 
 @keyframes riverWaterMove {
