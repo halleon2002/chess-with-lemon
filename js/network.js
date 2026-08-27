@@ -37,6 +37,7 @@ function teardownConnection() {
   if (peer) { try { peer.destroy(); } catch (e) {} }
   peer = null;
   conn = null;
+  opponentElo = null;
   clearConnectTimeout();
   hideChatUI();
 }
@@ -123,7 +124,7 @@ function setupConnection() {
     showChatUI();
     // Host assigns the joiner's side and both start the game.
     if (isHost) {
-      conn.send({ type: "assignSide", game: activeGame, side: otherSide(humanSide) });
+      conn.send({ type: "assignSide", game: activeGame, side: otherSide(humanSide), elo: myElo || blankElo() });
       beginOnlineGame();
     }
   });
@@ -138,7 +139,14 @@ function onData(msg) {
   if (msg.type === "assignSide") {
     activeGame = msg.game;
     humanSide = msg.side;
+    opponentElo = msg.elo || blankElo();
+    conn.send({ type: "eloHello", elo: myElo || blankElo() });
     beginOnlineGame();
+    return;
+  }
+
+  if (msg.type === "eloHello") {
+    opponentElo = msg.elo || blankElo();
     return;
   }
 

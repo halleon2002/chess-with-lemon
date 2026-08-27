@@ -876,6 +876,7 @@ async function preloadPieceImages() {
     overlayTitle.className = "";
     overlaySubtitle.textContent = t("chessStalemate");
     renderScoreLine();
+    maybeUpdateEloAfterGame(0.5);
   }
 
   function showGameOver(winner) {
@@ -884,6 +885,7 @@ async function preloadPieceImages() {
     const isA = winner === g.sideA.key;
     if (isA) score.a++; else score.b++;
     renderGameOverPanel(winner);
+    maybeUpdateEloAfterGame(winner === humanSide ? 1 : 0);
   }
 
   function renderScoreLine() {

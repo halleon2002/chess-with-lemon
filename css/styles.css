@@ -208,6 +208,24 @@ svg#board.board-flipped { transform: rotate(180deg); transform-origin: center; }
   .score-line .score-b { color: var(--dot-b-glow, var(--pawn-glow)); }
   .score-line .score-sep { color: var(--text-dim); font-weight: 400; font-size: 0.9rem; }
 
+  .elo-rating-line {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    margin: -10px 0 18px;
+    min-height: 1.1em;
+  }
+
+  .elo-delta-line {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 1rem;
+    margin: -6px 0 20px;
+    min-height: 1.2em;
+    color: var(--text-dim);
+  }
+  .elo-delta-line.elo-up { color: #4caf7d; }
+  .elo-delta-line.elo-down { color: var(--capture); }
+
   .game-pick-row { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
   .game-pick-btn {
     padding: 16px;

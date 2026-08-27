@@ -72,7 +72,9 @@
       authErrBadCredentials: "Wrong email or password.",
       authErrEmailInUse: "An account already exists for that email.",
       authErrWeakPassword: "Password should be at least 6 characters.",
-      logoutBtn: "Log out"
+      logoutBtn: "Log out",
+      yourRating: (r) => `Your rating: ${r}`,
+      eloDeltaText: (sign, after) => `${sign} → ${after}`
     },
     vi: {
       appTitle: "Trò Chơi Cờ",
@@ -144,7 +146,9 @@
       authErrBadCredentials: "Sai email hoặc mật khẩu.",
       authErrEmailInUse: "Email này đã được đăng ký.",
       authErrWeakPassword: "Mật khẩu cần ít nhất 6 ký tự.",
-      logoutBtn: "Đăng xuất"
+      logoutBtn: "Đăng xuất",
+      yourRating: (r) => `Điểm của bạn: ${r}`,
+      eloDeltaText: (sign, after) => `${sign} → ${after}`
     }
   };
 

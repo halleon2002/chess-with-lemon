@@ -138,6 +138,7 @@ function selectGame(gameKey) {
   );
   gameChoiceScreen.classList.remove("show");
   startScreen.classList.add("show");
+  updateEloDisplay();
 }
 
 // ================= Wiring =================
