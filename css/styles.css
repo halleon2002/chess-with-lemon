@@ -31,6 +31,9 @@
     --text: #eee6d4;
     --text-dim: #9aa0ad;
     --bg-photo: url("../images/home-bg-dark.png");
+    --chess-sq-light: #ede0c8;
+    --chess-sq-dark: #00000;
+    --chess-sq-stroke: rgba(238, 230, 212, 0.18);
   }
 
   /* Light theme — only page chrome (backgrounds, panels, borders, body
@@ -54,6 +57,9 @@
     --text: #1c222c;
     --text-dim: #5b6472;
     --bg-photo: url("../images/home-bg-light.png");
+    --chess-sq-light: #ffffff;
+    --chess-sq-dark: #ffb6c1;
+    --chess-sq-stroke: rgba(28, 34, 44, 0.15);
   }
 
   * { box-sizing: border-box; }
@@ -144,6 +150,9 @@ svg#board.board-flipped { transform: rotate(180deg); transform-origin: center; }
   .controls { margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
 
 /* ================= CỜ THÚ - water ================= */
+
+.chess-sq-light { fill: var(--chess-sq-light); stroke: var(--chess-sq-stroke); stroke-width: 1; }
+.chess-sq-dark { fill: var(--chess-sq-dark); stroke: var(--chess-sq-stroke); stroke-width: 1; }
 
 .ct-den-img {
     transform-box: fill-box;

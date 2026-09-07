@@ -110,10 +110,7 @@
       const sq = document.createElementNS(NS, "rect");
       sq.setAttribute("x", x); sq.setAttribute("y", y);
       sq.setAttribute("width", CHESS_CELL); sq.setAttribute("height", CHESS_CELL);
-      // Invisible board — background shows through; faint line so squares stay readable
-      sq.setAttribute("fill", isLight ? "#FFFFFF" : "#FFB6C1");
-      sq.setAttribute("stroke", "rgba(238, 230, 212, 0.22)");
-      sq.setAttribute("stroke-width", "1");
+      sq.setAttribute("class", isLight ? "chess-sq-light" : "chess-sq-dark");
       chessSquareLayer.appendChild(sq);
 
       const hit = document.createElementNS(NS, "rect");
