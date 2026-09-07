@@ -11,7 +11,7 @@ const CT_PIECE_IMAGES = {
 
 // Terrain tiles for Cờ Thú board — put your images in images/
 const CT_TERRAIN_IMAGES = {
-  river: "images/ct-river.png",
+  river: "images/ct-river.gif",
   den: "images/ct-den.png",
   trap: "images/ct-trap.png"
 };
