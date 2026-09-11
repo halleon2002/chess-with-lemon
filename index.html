@@ -166,15 +166,15 @@
     </div>
   </div>
 
-  <!-- Game over panel — small corner card, doesn't block the board or move list -->
-  <div class="result-panel" id="overlay">
-    <h2 id="overlayTitle">Kings Win!</h2>
-    <p id="overlaySubtitle">All pawns have been captured.</p>
-    <div id="scoreLine" class="score-line"></div>
-    <div id="eloDeltaLine" class="elo-delta-line"></div>
-    <div class="result-panel-actions">
+  <!-- Game over screen -->
+  <div class="overlay" id="overlay">
+    <div class="overlay-card">
+      <h2 id="overlayTitle">Kings Win!</h2>
+      <p id="overlaySubtitle">All pawns have been captured.</p>
+      <div id="scoreLine" class="score-line"></div>
+      <div id="eloDeltaLine" class="elo-delta-line"></div>
       <button id="overlayRestartBtn" data-i18n="rematchBtn">Rematch</button>
-      <button id="overlayReviewBtn" data-i18n="reviewBtn">Review</button>
+      <button id="overlayReviewBtn" style="margin-top:8px;" data-i18n="reviewBtn">Review</button>
     </div>
   </div>
 
