@@ -53,13 +53,21 @@
   <div class="subtitle" id="subtitle" data-i18n="chooseGameToBegin">Choose a game to begin.</div>
 
   <div class="status-bar">
-    <div class="status-item"><span class="status-dot a"></span><span id="turnLabel">Turn</span></div>
+    <div class="status-item"><span class="status-dot" id="turnDot"></span><span id="turnLabel">Turn</span></div>
     <div class="status-divider"></div>
-    <div class="status-item"><span class="status-dot b"></span><span id="pieceCount">&nbsp;</span></div>
+    <div class="status-item"><span id="pieceCount">&nbsp;</span></div>
   </div>
 
-  <div class="board-wrap">
-    <svg id="board" viewBox="0 0 450 450" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div class="board-row">
+    <div class="board-wrap">
+      <svg id="board" viewBox="0 0 450 450" xmlns="http://www.w3.org/2000/svg"></svg>
+
+      <!-- Move list — chess only for now, hidden for other games -->
+      <div id="moveHistoryPanel" class="move-history-panel" style="display:none;">
+        <div class="move-history-header" data-i18n="movesTitle">Moves</div>
+        <div id="moveHistoryList" class="move-history-list"></div>
+      </div>
+    </div>
   </div>
 
   <!-- Online chat: only shown/enabled during an active online match -->

@@ -2,6 +2,9 @@
   const svg = document.getElementById("board");
   const NS = "http://www.w3.org/2000/svg";
   const turnLabel = document.getElementById("turnLabel");
+  const turnDot = document.getElementById("turnDot");
+  const moveHistoryPanel = document.getElementById("moveHistoryPanel");
+  const moveHistoryList = document.getElementById("moveHistoryList");
   const pieceCountLabel = document.getElementById("pieceCount");
   const subtitle = document.getElementById("subtitle");
   const gameTitle = document.getElementById("gameTitle");
@@ -54,7 +57,7 @@
   let ctBoardBuilt = false;
 
   // ---- Chess (8x8) rendering layers ----
-  const CHESS_CELL = 54, CHESS_PAD = 12;
+  const CHESS_CELL = 54, CHESS_PAD = 22;
   const CHESS_VIEW = 8 * CHESS_CELL + CHESS_PAD * 2;
   function chessCoordX(col) { return CHESS_PAD + col * CHESS_CELL + CHESS_CELL / 2; }
   function chessCoordY(row) { return CHESS_PAD + row * CHESS_CELL + CHESS_CELL / 2; }
@@ -62,14 +65,18 @@
   const chessSquareLayer = document.createElementNS(NS, "g");
   const chessPieceLayer = document.createElementNS(NS, "g");
   const chessHitLayer = document.createElementNS(NS, "g");
+  const chessCoordLayer = document.createElementNS(NS, "g");
   svg.appendChild(chessSquareLayer);
   svg.appendChild(chessPieceLayer);
   svg.appendChild(chessHitLayer);
+  svg.appendChild(chessCoordLayer);
   chessSquareLayer.style.display = "none";
   chessPieceLayer.style.display = "none";
   chessHitLayer.style.display = "none";
+  chessCoordLayer.style.display = "none";
 
   const chessPointEls = {};
+  const chessCoordLabels = [];
   let chessBoardBuilt = false;
 
   // mode: "lattice" | "cothu" | "chess"
@@ -86,6 +93,7 @@
     ctTerrainLayer.style.display = ct; ctGridLayer.style.display = ct;
     ctPieceLayer.style.display = ct; ctHitLayer.style.display = ct;
     chessSquareLayer.style.display = ch; chessPieceLayer.style.display = ch; chessHitLayer.style.display = ch;
+    chessCoordLayer.style.display = ch;
 
     if (mode === "cothu") svg.setAttribute("viewBox", `0 0 ${CT_VIEW_W} ${CT_VIEW_H}`);
     else if (mode === "chess") svg.setAttribute("viewBox", `0 0 ${CHESS_VIEW} ${CHESS_VIEW}`);
@@ -122,6 +130,46 @@
       chessHitLayer.appendChild(hit);
 
       chessPointEls[p.x+","+p.y] = { hit, pieceGroup: null };
+    }
+    buildChessCoordLabels();
+  }
+
+  // "a"-"h" under the board, "1"-"8" to its left. Kept upright and correctly
+  // placed even when the board is flipped 180° (see updateChessCoordRotation).
+  function buildChessCoordLabels() {
+    const files = "abcdefgh";
+    const bottomY = CHESS_PAD + 8 * CHESS_CELL + CHESS_PAD / 2;
+    for (let col = 0; col < 8; col++) {
+      const t = document.createElementNS(NS, "text");
+      t.setAttribute("class", "chess-coord-label");
+      t.setAttribute("text-anchor", "middle");
+      t.setAttribute("dominant-baseline", "central");
+      t.textContent = files[col];
+      const cx = chessCoordX(col);
+      t.dataset.tx = cx; t.dataset.ty = bottomY;
+      t.style.transform = `translate(${cx}px, ${bottomY}px)`;
+      chessCoordLayer.appendChild(t);
+      chessCoordLabels.push(t);
+    }
+    const leftX = CHESS_PAD / 2;
+    for (let row = 0; row < 8; row++) {
+      const t = document.createElementNS(NS, "text");
+      t.setAttribute("class", "chess-coord-label");
+      t.setAttribute("text-anchor", "middle");
+      t.setAttribute("dominant-baseline", "central");
+      t.textContent = String(8 - row);
+      const cy = chessCoordY(row);
+      t.dataset.tx = leftX; t.dataset.ty = cy;
+      t.style.transform = `translate(${leftX}px, ${cy}px)`;
+      chessCoordLayer.appendChild(t);
+      chessCoordLabels.push(t);
+    }
+  }
+
+  function updateChessCoordRotation() {
+    for (const el of chessCoordLabels) {
+      const base = `translate(${el.dataset.tx}px, ${el.dataset.ty}px)`;
+      el.style.transform = base + (boardFlipped ? " rotate(180deg)" : "");
     }
   }
 
@@ -407,8 +455,8 @@ async function preloadPieceImages() {
     g.setAttribute("class", "piece-group");
 
     const isTop = piece.owner === "top";
-    const fill = isTop ? "var(--king)" : "var(--pawn)";
-    const glow = isTop ? "var(--king-glow)" : "var(--pawn-glow)";
+    const fill = isTop ? "var(--ct-red)" : "var(--ct-yellow)";
+    const glow = isTop ? "var(--ct-red-glow)" : "var(--ct-yellow-glow)";
 
     // Proportions: outer ring stays bold; GIF is clipped to stay inside
     const OUTER_R = 28;
@@ -425,8 +473,8 @@ async function preloadPieceImages() {
     outer.setAttribute("stroke", glow);
     outer.setAttribute("stroke-width", String(RING_STROKE));
     outer.style.filter = isTop
-      ? "drop-shadow(0 0 5px rgba(244,192,99,0.85))"
-      : "drop-shadow(0 0 5px rgba(125,179,238,0.85))";
+      ? "drop-shadow(0 0 5px rgba(240,113,90,0.85))"
+      : "drop-shadow(0 0 5px rgba(244,211,94,0.85))";
     g.appendChild(outer);
 
     // Dark socket behind the animal
@@ -816,6 +864,8 @@ async function preloadPieceImages() {
     turnLabel.textContent = isGameOver ? t("gameOver") : t("turnOf", label);
     turnLabel.classList.toggle("active-a", turnIsA && !isGameOver);
     turnLabel.classList.toggle("active-b", !turnIsA && !isGameOver);
+    turnDot.classList.toggle("a", turnIsA);
+    turnDot.classList.toggle("b", !turnIsA);
 
     if (activeGame === "kap") {
       pieceCountLabel.textContent = t("pawnsCount", KAP.countPawns(board));
@@ -829,6 +879,26 @@ async function preloadPieceImages() {
       const w = chessGetPiecesOf(board, "white").length, bl = chessGetPiecesOf(board, "black").length;
       pieceCountLabel.textContent = t("whiteBlackCount", w, bl);
     }
+  }
+
+  // Chess-only for now — will extend to Cờ Thú once that game gets its own
+  // move notation.
+  function updateMoveHistoryDisplay() {
+    if (activeGame !== "chess" || chessMoveHistory.length === 0) {
+      moveHistoryPanel.style.display = "none";
+      moveHistoryList.innerHTML = "";
+      return;
+    }
+    moveHistoryPanel.style.display = "flex";
+    let html = "";
+    for (let i = 0; i < chessMoveHistory.length; i += 2) {
+      const num = i / 2 + 1;
+      const whiteMove = chessMoveHistory[i];
+      const blackMove = chessMoveHistory[i + 1] || "";
+      html += `<div class="move-pair"><span class="move-num">${num}.</span><span class="move-white">${whiteMove}</span><span class="move-black">${blackMove}</span></div>`;
+    }
+    moveHistoryList.innerHTML = html;
+    moveHistoryList.scrollTop = moveHistoryList.scrollHeight;
   }
 
   function applyThemeColors() {

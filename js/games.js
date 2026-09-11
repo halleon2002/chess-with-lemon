@@ -34,8 +34,8 @@ const GAMES = {
     key: "cothu",
     module: null,
     title: { en: "Cờ Thú (Jungle Chess)", vi: "Cờ Thú" },
-    sideA: { key: "top", label: { en: "Top", vi: "Trên" } },
-    sideB: { key: "bottom", label: { en: "Bottom", vi: "Dưới" } },
+    sideA: { key: "top", label: { en: "Red", vi: "Đỏ" } },
+    sideB: { key: "bottom", label: { en: "Yellow", vi: "Vàng" } },
     firstTurn: "top",
     boardMode: "cothu",
     bottomSide: "bottom",
@@ -43,7 +43,7 @@ const GAMES = {
       en: "8 ranked animals (Rat &lt; Cat &lt; Dog &lt; Wolf &lt; Leopard &lt; Tiger &lt; Lion &lt; Elephant). A piece captures any enemy of equal or lower rank &mdash; except the <b>Rat can capture the Elephant</b> (but not vice versa). Only the Rat may enter the river; Lion and Tiger can leap across it (blocked if a Rat sits in the water). Landing on an enemy trap (next to their own den) drops a piece's rank to 0. <b>Win by marching any piece into the opponent's den.</b>",
       vi: "8 con vật xếp hạng (Chuột &lt; Mèo &lt; Chó &lt; Sói &lt; Báo &lt; Hổ &lt; Sư Tử &lt; Tượng). Một quân ăn được bất kỳ quân địch nào cùng hạng hoặc thấp hơn &mdash; ngoại trừ <b>Chuột có thể ăn Tượng</b> (nhưng ngược lại thì không). Chỉ Chuột mới được xuống sông; Sư Tử và Hổ có thể nhảy qua sông (bị chặn nếu có Chuột đang ở dưới nước trên đường nhảy). Đứng vào bẫy của đối phương (cạnh chuồng của họ) khiến hạng của quân đó về 0. <b>Thắng khi đưa bất kỳ quân nào vào chuồng đối phương.</b>"
     },
-    colors: { a: "var(--king)", aGlow: "var(--king-glow)", b: "var(--pawn)", bGlow: "var(--pawn-glow)" }
+    colors: { a: "var(--ct-red)", aGlow: "var(--ct-red-glow)", b: "var(--ct-yellow)", bGlow: "var(--ct-yellow-glow)" }
   },
   chess: {
     key: "chess",

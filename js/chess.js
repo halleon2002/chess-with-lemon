@@ -350,6 +350,33 @@ CHESS.chooseAIMove = function (board, side, chessState, depth) {
 };
 
 
+function chessSquareName(p) { return String.fromCharCode(97 + p.x) + (8 - p.y); }
+
+const CHESS_SAN_LETTER = { knight: "N", bishop: "B", rook: "R", queen: "Q", king: "K" };
+
+// Builds basic algebraic notation for a move already applied to the board.
+// Does not disambiguate between two identical pieces that could both reach
+// the same square (e.g. two knights) — a reasonable simplification for a
+// first pass; can be added later if it turns out to matter in practice.
+function chessBuildSAN(pieceType, from, to, result, checkStatus) {
+  let san;
+  if (result.isCastle) {
+    san = result.isCastle === "king" ? "O-O" : "O-O-O";
+  } else {
+    const dest = chessSquareName(to);
+    const isCapture = !!result.captured;
+    if (pieceType === "pawn") {
+      san = isCapture ? (chessSquareName(from)[0] + "x" + dest) : dest;
+      if (result.promoted) san += "=Q";
+    } else {
+      san = CHESS_SAN_LETTER[pieceType] + (isCapture ? "x" : "") + dest;
+    }
+  }
+  if (checkStatus === "checkmate") san += "#";
+  else if (checkStatus === "check") san += "+";
+  return san;
+}
+
 // ---- Controller API ----
 CHESS.getLegalPlain = function (point) {
   return CHESS.getLegalMoves(board, point, chessState).map(m => m.to);
@@ -375,6 +402,7 @@ CHESS.handleClick = function (p) {
 
 CHESS._performMove = function (from, match) {
   const row = from.y;
+  const pieceType = getPiece(board, from).type;
   const result = CHESS.applyMove(board, from, match.to, chessState);
   selected = null;
   chessAnimateMove(from, match.to);
@@ -384,7 +412,7 @@ CHESS._performMove = function (from, match) {
   }
   if (result.isCastle) chessAnimateCastleRook(result.isCastle, row);
   if (result.promoted) setTimeout(() => chessRefreshPieceAt(match.to), 280);
-  CHESS._finishTurn({ broadcast: true, from, to: match.to });
+  CHESS._finishTurn({ broadcast: true, from, to: match.to, pieceType, result });
 };
 
 CHESS._finishTurn = function (opts) {
@@ -395,6 +423,9 @@ CHESS._finishTurn = function (opts) {
   }
   currentTurn = CHESS.other(currentTurn);
   const status = CHESS.checkStatus(board, currentTurn, chessState);
+  if (opts.pieceType && opts.result) {
+    recordChessMove(chessBuildSAN(opts.pieceType, opts.from, opts.to, opts.result, status.status));
+  }
   if (status.status === "checkmate") {
     isGameOver = true; updateStatus(); refreshHighlights();
     setTimeout(() => showGameOver(status.winner), 300); return;
@@ -411,6 +442,7 @@ CHESS.runAI = function (side) {
   const move = CHESS.chooseAIMove(board, side, chessState, 3);
   if (!move) return;
   const row = move.from.y;
+  const pieceType = getPiece(board, move.from).type;
   const result = CHESS.applyMove(board, move.from, move.to, chessState);
   chessAnimateMove(move.from, move.to);
   if (result.enPassant) {
@@ -419,12 +451,13 @@ CHESS.runAI = function (side) {
   }
   if (result.isCastle) chessAnimateCastleRook(result.isCastle, row);
   if (result.promoted) setTimeout(() => chessRefreshPieceAt(move.to), 280);
-  CHESS._finishTurn({ broadcast: false, from: move.from, to: move.to });
+  CHESS._finishTurn({ broadcast: false, from: move.from, to: move.to, pieceType, result });
 };
 
 CHESS.applyRemote = function (msg) {
   if (msg.type !== "chessMove") return;
   const row = msg.from.y;
+  const pieceType = getPiece(board, msg.from).type;
   const result = CHESS.applyMove(board, msg.from, msg.to, chessState);
   chessAnimateMove(msg.from, msg.to);
   if (result.enPassant) {
@@ -433,5 +466,5 @@ CHESS.applyRemote = function (msg) {
   }
   if (result.isCastle) chessAnimateCastleRook(result.isCastle, row);
   if (result.promoted) setTimeout(() => chessRefreshPieceAt(msg.to), 280);
-  CHESS._finishTurn({ broadcast: false, from: msg.from, to: msg.to });
+  CHESS._finishTurn({ broadcast: false, from: msg.from, to: msg.to, pieceType, result });
 };

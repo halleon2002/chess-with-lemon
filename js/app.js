@@ -27,10 +27,16 @@ const ROOM_PREFIX = "kap-";
 let score = { a: 0, b: 0 };
 let lastWinner = null;
 let lastMove = null; // { from: {x,y}, to: {x,y} } — last played move highlight
+let chessMoveHistory = []; // flat list of SAN strings, chess only — status panel
 
 function recordLastMove(from, to) {
   if (from && to) lastMove = { from: { x: from.x, y: from.y }, to: { x: to.x, y: to.y } };
   else lastMove = null;
+}
+
+function recordChessMove(san) {
+  chessMoveHistory.push(san);
+  updateMoveHistoryDisplay();
 }
 
 // Whichever side the local player is on should always render at the bottom of
@@ -71,6 +77,7 @@ function resetBoardLocal() {
   boardFlipped = computeBoardFlipped();
   svg.classList.toggle("board-flipped", boardFlipped);
   updateCtDenRotation();
+  updateChessCoordRotation();
   board = currentModule().createBoard();
   currentTurn = g.firstTurn;
   selected = null;
@@ -81,6 +88,7 @@ function resetBoardLocal() {
   ckChainSteps = [];
   lastCtWinWasDen = false;
   chessState = { enPassantTarget: null };
+  chessMoveHistory = [];
   overlay.classList.remove("show");
 
   if (activeGame === "cothu") ctSyncPieces();
@@ -89,6 +97,7 @@ function resetBoardLocal() {
 
   updateStatus();
   refreshHighlights();
+  updateMoveHistoryDisplay();
 }
 
 function restart() {
