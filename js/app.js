@@ -201,7 +201,9 @@ document.getElementById("startBtn").addEventListener("click", () => {
 document.getElementById("restartBtn").addEventListener("click", restart);
 document.getElementById("overlayRestartBtn").addEventListener("click", restart);
 document.getElementById("changeModeBtn").addEventListener("click", openModeScreen);
-document.getElementById("overlayModeBtn").addEventListener("click", openModeScreen);
+document.getElementById("overlayReviewBtn").addEventListener("click", () => {
+  overlay.classList.remove("show");
+});
 document.getElementById("backToGameChoice").addEventListener("click", openGameChoiceScreen);
 
 // ================= Language toggle =================

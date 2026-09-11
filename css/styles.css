@@ -288,6 +288,45 @@ svg#board.board-flipped { transform: rotate(180deg); transform-origin: center; }
   .overlay-card h2.b-win { color: var(--pawn-glow); }
   .overlay-card p { color: var(--text-dim); margin: 0 0 20px; font-size: 0.92rem; }
 
+  /* Game-over result panel — small corner card, board & move list stay visible behind it */
+  .result-panel {
+    display: none;
+    position: fixed;
+    top: 64px;
+    right: 14px;
+    z-index: 18;
+    background: var(--panel);
+    border: 1px solid var(--line-dim);
+    border-radius: 16px;
+    padding: 18px 20px;
+    width: min(260px, calc(100vw - 28px));
+    text-align: center;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+  }
+  .result-panel.show { display: block; }
+
+  .result-panel h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 1.25rem;
+    margin: 0 0 8px;
+  }
+  .result-panel h2.a-win, .result-panel h2.b-win {
+    display: inline-block;
+    background: var(--chip-dark);
+    padding: 3px 14px;
+    border-radius: 10px;
+  }
+  .result-panel h2.a-win { color: var(--king-glow); }
+  .result-panel h2.b-win { color: var(--pawn-glow); }
+  .result-panel p { color: var(--text-dim); margin: 0 0 12px; font-size: 0.85rem; }
+
+  .result-panel-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .result-panel-actions button { flex: 1; padding: 8px 10px; font-size: 0.82rem; }
+
   .score-line {
     display: flex;
     justify-content: center;
