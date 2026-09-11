@@ -9,6 +9,8 @@ let isGameOver = false;
 let humanSide = "king";
 let mode = "ai"; // "ai" | "local" | "online"
 let boardFlipped = false; // true when the board is rotated 180° so humanSide renders at the bottom
+let ctDifficulty = "medium"; // Cờ Thú AI difficulty — easy | medium | hard
+const CT_DIFFICULTY_DEPTH = { easy: 1, medium: 3, hard: 5 };
 
 // Checkers multi-jump bookkeeping
 let ckPendingFrom = null;
@@ -67,7 +69,8 @@ function maybeTriggerAI() {
 
 function aiMove(side) {
   if (isGameOver || currentTurn !== side) return;
-  currentModule().runAI(side);
+  if (activeGame === "cothu") currentModule().runAI(side, CT_DIFFICULTY_DEPTH[ctDifficulty]);
+  else currentModule().runAI(side);
 }
 
 // ================= Reset / mode flow =================
@@ -127,6 +130,11 @@ function openGameChoiceScreen() {
   rulesNote.innerHTML = "";
 }
 
+function updateDifficultyVisibility() {
+  document.getElementById("ctDifficultyGroup").style.display =
+    (activeGame === "cothu" && mode === "ai") ? "block" : "none";
+}
+
 function selectGame(gameKey) {
   activeGame = gameKey;
   const g = G();
@@ -148,6 +156,7 @@ function selectGame(gameKey) {
   gameChoiceScreen.classList.remove("show");
   startScreen.classList.add("show");
   updateEloDisplay();
+  updateDifficultyVisibility();
 }
 
 // ================= Wiring =================
@@ -176,6 +185,10 @@ wireToggleGroup("opponentButtons", value => {
   onlinePanel.style.display = showOnline ? "block" : "none";
   startBtn.style.display = showOnline ? "none" : "block";
   if (showOnline) setOnlineStatus("");
+  updateDifficultyVisibility();
+});
+wireToggleGroup("difficultyButtons", value => {
+  ctDifficulty = value;
 });
 wireToggleGroup("onlineTabButtons", value => {
   document.getElementById("createTab").style.display = value === "create" ? "block" : "none";

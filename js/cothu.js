@@ -116,42 +116,103 @@
     return null;
   };
 
-  CT.evaluateMove = function (board, from, mv, side) {
-    const to = mv.to;
-    const targetPiece = getPiece(board, to);
-    let score = 0;
-    if (targetPiece) score += CT.RANK[targetPiece.type] * 20;
-    if (ctDenOwnerAt(to) === CT.other(side)) score += 100000;
-    const after = cloneBoard(board);
-    CT.applyMove(after, from, to);
-    const opp = CT.other(side);
-    let danger = 0;
-    for (const op of ctGetPiecesOf(after, opp)) {
-      for (const omv of CT.getLegalMoves(after, op)) {
-        if (samePoint(omv.to, to) && omv.capture) danger = Math.max(danger, CT.RANK[getPiece(after,to).type]);
-      }
-    }
-    score -= danger * 15;
-    const denPos = CT_DEN[opp];
-    const distBefore = Math.abs(from.x-denPos.x) + Math.abs(from.y-denPos.y);
-    const distAfter = Math.abs(to.x-denPos.x) + Math.abs(to.y-denPos.y);
-    score += (distBefore - distAfter) * 2;
-    return score;
-  };
+  // ---- AI: minimax with alpha-beta pruning ----
+  const CT_VALUES = { rat:100, cat:150, dog:200, wolf:250, leopard:300, tiger:400, lion:450, elephant:500 };
 
-  CT.chooseAIMove = function (board, side) {
-    const pieces = ctGetPiecesOf(board, side);
-    const candidates = [];
-    for (const p of pieces) {
-      for (const mv of CT.getLegalMoves(board, p)) {
-        candidates.push({ from: p, to: mv.to, score: CT.evaluateMove(board, p, mv, side) });
-      }
+  function ctPieceValue(board, p) {
+    const piece = getPiece(board, p);
+    const base = CT_VALUES[piece.type];
+    const trapOwner = ctTrapOwnerAt(p);
+    if (trapOwner && trapOwner !== piece.owner) return base * 0.15; // standing on an enemy trap: nearly worthless until it moves off
+    return base;
+  }
+
+  function ctAllLegalMoves(board, side) {
+    const out = [];
+    for (const p of ctGetPiecesOf(board, side)) {
+      for (const m of CT.getLegalMoves(board, p)) out.push({ from: p, move: m });
     }
-    if (candidates.length === 0) return null;
-    candidates.sort((a,b) => b.score - a.score);
-    const best = candidates[0].score;
-    const top = candidates.filter(c => c.score >= best - 0.01);
-    return top[Math.floor(Math.random() * top.length)];
+    return out;
+  }
+
+  // Distance-based pressure from `who`'s nearest piece toward the opponent's
+  // den — a coarse "how close is my best threat to breaking in" signal.
+  function ctDenPressure(board, who) {
+    const denPos = CT_DEN[CT.other(who)];
+    let best = Infinity;
+    for (const p of ctGetPiecesOf(board, who)) {
+      const dist = Math.abs(p.x - denPos.x) + Math.abs(p.y - denPos.y);
+      if (dist < best) best = dist;
+    }
+    if (best === Infinity) return 0;
+    return (12 - best) * 8;
+  }
+
+  function ctEvaluate(board, forSide) {
+    let score = 0;
+    const opp = CT.other(forSide);
+    for (const p of ctAllPoints()) {
+      const piece = getPiece(board, p);
+      if (!piece) continue;
+      const val = ctPieceValue(board, p);
+      score += (piece.owner === forSide) ? val : -val;
+      // Reward luring an enemy piece onto one of our own traps (it's
+      // effectively defenseless there); penalize the reverse.
+      const trapOwner = ctTrapOwnerAt(p);
+      if (trapOwner === forSide && piece.owner === opp) score += CT_VALUES[piece.type] * 0.4;
+      if (trapOwner === opp && piece.owner === forSide) score -= CT_VALUES[piece.type] * 0.2;
+    }
+    score += ctDenPressure(board, forSide) - ctDenPressure(board, opp);
+    return score;
+  }
+
+  function ctOrderMoves(board, moves) {
+    return moves.slice().sort((a, b) => {
+      const av = getPiece(board, a.move.to) ? CT_VALUES[getPiece(board, a.move.to).type] : 0;
+      const bv = getPiece(board, b.move.to) ? CT_VALUES[getPiece(board, b.move.to).type] : 0;
+      return bv - av; // captures of valuable pieces first — helps alpha-beta prune more
+    });
+  }
+
+  function ctMinimax(board, depth, alpha, beta, side, rootSide) {
+    const winner = CT.checkWinner(board, side);
+    if (winner) return winner === rootSide ? 100000 + depth : -100000 - depth;
+    if (depth === 0) return ctEvaluate(board, rootSide);
+
+    const moves = ctOrderMoves(board, ctAllLegalMoves(board, side));
+    const maximizing = side === rootSide;
+    let best = maximizing ? -Infinity : Infinity;
+
+    for (const { from, move } of moves) {
+      const nb = cloneBoard(board);
+      const result = CT.applyMove(nb, from, move.to);
+      const val = result.wonByDen
+        ? (side === rootSide ? 100000 + depth : -100000 - depth)
+        : ctMinimax(nb, depth - 1, alpha, beta, CT.other(side), rootSide);
+      if (maximizing) { best = Math.max(best, val); alpha = Math.max(alpha, val); }
+      else { best = Math.min(best, val); beta = Math.min(beta, val); }
+      if (beta <= alpha) break;
+    }
+    return best;
+  }
+
+  CT.chooseAIMove = function (board, side, depth) {
+    depth = depth || 3;
+    const moves = ctOrderMoves(board, ctAllLegalMoves(board, side));
+    if (moves.length === 0) return null;
+    let bestScore = -Infinity;
+    let bestMoves = [];
+    for (const { from, move } of moves) {
+      const nb = cloneBoard(board);
+      const result = CT.applyMove(nb, from, move.to);
+      const val = result.wonByDen
+        ? 100000 + depth
+        : ctMinimax(nb, depth - 1, -Infinity, Infinity, CT.other(side), side);
+      if (val > bestScore) { bestScore = val; bestMoves = [{ from, move }]; }
+      else if (val === bestScore) { bestMoves.push({ from, move }); }
+    }
+    const pick = bestMoves[Math.floor(Math.random() * bestMoves.length)];
+    return { from: pick.from, to: pick.move.to };
   };
 
   // ---- Controller API ----
@@ -204,8 +265,8 @@
     if (mode === "ai") maybeTriggerAI();
   };
 
-  CT.runAI = function (side) {
-    const move = CT.chooseAIMove(board, side);
+  CT.runAI = function (side, depth) {
+    const move = CT.chooseAIMove(board, side, depth);
     if (!move) return;
     const result = CT.applyMove(board, move.from, move.to);
     ctAnimateMove(move.from, move.to);
