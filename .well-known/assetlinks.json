@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.halleon2002.twa",
+        "sha256_cert_fingerprints": ["58:1A:E2:EB:88:EE:77:BD:24:85:92:F8:18:50:30:25:34:9F:1E:1F:A0:65:11:9A:3B:31:4E:74:27:FF:5D:3C"]
+      }
+    }]
