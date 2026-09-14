@@ -424,7 +424,7 @@ CHESS._finishTurn = function (opts) {
   currentTurn = CHESS.other(currentTurn);
   const status = CHESS.checkStatus(board, currentTurn, chessState);
   if (opts.pieceType && opts.result) {
-    recordChessMove(chessBuildSAN(opts.pieceType, opts.from, opts.to, opts.result, status.status));
+    recordMove(chessBuildSAN(opts.pieceType, opts.from, opts.to, opts.result, status.status));
   }
   if (status.status === "checkmate") {
     isGameOver = true; updateStatus(); refreshHighlights();

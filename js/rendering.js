@@ -32,7 +32,7 @@
   svg.appendChild(hitLayer);
 
   // ---- Cờ Thú (grid) rendering layers, coexisting with the lattice layers above ----
-  const CT_CELL = 58, CT_PAD_X = 12, CT_PAD_Y = 12;
+  const CT_CELL = 58, CT_PAD_X = 20, CT_PAD_Y = 20;
   const CT_VIEW_W = CT_COLS * CT_CELL + CT_PAD_X * 2;
   const CT_VIEW_H = CT_ROWS * CT_CELL + CT_PAD_Y * 2;
   function ctCoordX(col) { return CT_PAD_X + col * CT_CELL + CT_CELL / 2; }
@@ -42,18 +42,22 @@
   const ctGridLayer = document.createElementNS(NS, "g");
   const ctPieceLayer = document.createElementNS(NS, "g");
   const ctHitLayer = document.createElementNS(NS, "g");
+  const ctCoordLayer = document.createElementNS(NS, "g");
   svg.appendChild(ctTerrainLayer);
   svg.appendChild(ctGridLayer);
   svg.appendChild(ctPieceLayer);
   svg.appendChild(ctHitLayer);
+  svg.appendChild(ctCoordLayer);
   ctTerrainLayer.style.display = "none";
   ctGridLayer.style.display = "none";
   ctPieceLayer.style.display = "none";
   ctHitLayer.style.display = "none";
+  ctCoordLayer.style.display = "none";
 
   const ctPointEls = {};
   const ctDenImages = [];
   const ctTrapImages = [];
+  const ctCoordLabels = [];
   let ctBoardBuilt = false;
 
   // ---- Chess (8x8) rendering layers ----
@@ -92,6 +96,7 @@
     pieceLayer.style.display = lat; hitLayer.style.display = lat;
     ctTerrainLayer.style.display = ct; ctGridLayer.style.display = ct;
     ctPieceLayer.style.display = ct; ctHitLayer.style.display = ct;
+    ctCoordLayer.style.display = ct;
     chessSquareLayer.style.display = ch; chessPieceLayer.style.display = ch; chessHitLayer.style.display = ch;
     chessCoordLayer.style.display = ch;
 
@@ -141,7 +146,7 @@
     const bottomY = CHESS_PAD + 8 * CHESS_CELL + CHESS_PAD / 2;
     for (let col = 0; col < 8; col++) {
       const t = document.createElementNS(NS, "text");
-      t.setAttribute("class", "chess-coord-label");
+      t.setAttribute("class", "board-coord-label");
       t.setAttribute("text-anchor", "middle");
       t.setAttribute("dominant-baseline", "central");
       t.textContent = files[col];
@@ -154,7 +159,7 @@
     const leftX = CHESS_PAD / 2;
     for (let row = 0; row < 8; row++) {
       const t = document.createElementNS(NS, "text");
-      t.setAttribute("class", "chess-coord-label");
+      t.setAttribute("class", "board-coord-label");
       t.setAttribute("text-anchor", "middle");
       t.setAttribute("dominant-baseline", "central");
       t.textContent = String(8 - row);
@@ -405,6 +410,47 @@
       ctHitLayer.appendChild(hit);
 
       ctPointEls[p.x+","+p.y] = { hit, pieceGroup: null };
+    }
+    buildCtCoordLabels();
+  }
+
+  // "a"-"g" under the board, "1"-"9" to its left (matches the move-notation
+  // square naming: file = column letter, rank = CT_ROWS - row). Kept upright
+  // and correctly placed even when the board is flipped 180°.
+  function buildCtCoordLabels() {
+    const files = "abcdefg";
+    const bottomY = CT_PAD_Y + CT_ROWS * CT_CELL + CT_PAD_Y / 2;
+    for (let col = 0; col < CT_COLS; col++) {
+      const t = document.createElementNS(NS, "text");
+      t.setAttribute("class", "board-coord-label");
+      t.setAttribute("text-anchor", "middle");
+      t.setAttribute("dominant-baseline", "central");
+      t.textContent = files[col];
+      const cx = ctCoordX(col);
+      t.dataset.tx = cx; t.dataset.ty = bottomY;
+      t.style.transform = `translate(${cx}px, ${bottomY}px)`;
+      ctCoordLayer.appendChild(t);
+      ctCoordLabels.push(t);
+    }
+    const leftX = CT_PAD_X / 2;
+    for (let row = 0; row < CT_ROWS; row++) {
+      const t = document.createElementNS(NS, "text");
+      t.setAttribute("class", "board-coord-label");
+      t.setAttribute("text-anchor", "middle");
+      t.setAttribute("dominant-baseline", "central");
+      t.textContent = String(CT_ROWS - row);
+      const cy = ctCoordY(row);
+      t.dataset.tx = leftX; t.dataset.ty = cy;
+      t.style.transform = `translate(${leftX}px, ${cy}px)`;
+      ctCoordLayer.appendChild(t);
+      ctCoordLabels.push(t);
+    }
+  }
+
+  function updateCtCoordRotation() {
+    for (const el of ctCoordLabels) {
+      const base = `translate(${el.dataset.tx}px, ${el.dataset.ty}px)`;
+      el.style.transform = base + (boardFlipped ? " rotate(180deg)" : "");
     }
   }
 
@@ -881,21 +927,21 @@ async function preloadPieceImages() {
     }
   }
 
-  // Chess-only for now — will extend to Cờ Thú once that game gets its own
-  // move notation.
+  // Shown for games that have their own move notation (chess, Cờ Thú).
+  const MOVE_HISTORY_GAMES = ["chess", "cothu"];
   function updateMoveHistoryDisplay() {
-    if (activeGame !== "chess" || chessMoveHistory.length === 0) {
+    if (!MOVE_HISTORY_GAMES.includes(activeGame) || moveHistory.length === 0) {
       moveHistoryPanel.style.display = "none";
       moveHistoryList.innerHTML = "";
       return;
     }
     moveHistoryPanel.style.display = "flex";
     let html = "";
-    for (let i = 0; i < chessMoveHistory.length; i += 2) {
+    for (let i = 0; i < moveHistory.length; i += 2) {
       const num = i / 2 + 1;
-      const whiteMove = chessMoveHistory[i];
-      const blackMove = chessMoveHistory[i + 1] || "";
-      html += `<div class="move-pair"><span class="move-num">${num}.</span><span class="move-white">${whiteMove}</span><span class="move-black">${blackMove}</span></div>`;
+      const firstMove = moveHistory[i];
+      const secondMove = moveHistory[i + 1] || "";
+      html += `<div class="move-pair"><span class="move-num">${num}.</span><span class="move-white">${firstMove}</span><span class="move-black">${secondMove}</span></div>`;
     }
     moveHistoryList.innerHTML = html;
     moveHistoryList.scrollTop = moveHistoryList.scrollHeight;

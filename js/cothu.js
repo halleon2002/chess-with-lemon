@@ -215,7 +215,20 @@
     return { from: pick.from, to: pick.move.to };
   };
 
-  // ---- Controller API ----
+  function ctSquareName(p) { return String.fromCharCode(97 + p.x) + (CT_ROWS - p.y); }
+
+const CT_SAN_LETTER = { rat:"R", cat:"C", dog:"D", wolf:"W", leopard:"P", tiger:"T", lion:"L", elephant:"E" };
+
+// Builds short move notation, e.g. "Txd4" (Tiger captures on d4), "R#" for a
+// den-winning move. "P" is used for Leopard since "L" is taken by Lion —
+// matches this project's own asset naming (leopard's image is panther.gif).
+function ctBuildNotation(pieceType, from, to, captured, wonByDen) {
+  let notation = CT_SAN_LETTER[pieceType] + (captured ? "x" : "") + ctSquareName(to);
+  if (wonByDen) notation += "#";
+  return notation;
+}
+
+// ---- Controller API ----
   CT.getLegalPlain = function (point) {
     return CT.getLegalMoves(board, point).filter(m => !m.capture).map(m => m.to);
   };
@@ -237,10 +250,11 @@
   };
 
   CT._performMove = function (from, to) {
+    const pieceType = getPiece(board, from).type;
     const result = CT.applyMove(board, from, to);
     selected = null;
     ctAnimateMove(from, to);
-    CT._finishTurn({ broadcast: true, from, to, wonByDen: result.wonByDen, mover: currentTurn, captured: result.captured });
+    CT._finishTurn({ broadcast: true, from, to, pieceType, wonByDen: result.wonByDen, mover: currentTurn, captured: result.captured });
   };
 
   CT._finishTurn = function (opts) {
@@ -248,6 +262,9 @@
     if (opts.from && opts.to) recordLastMove(opts.from, opts.to);
     if (mode === "online" && opts.broadcast && conn && conn.open) {
       conn.send({ type: "ctMove", from: opts.from, to: opts.to });
+    }
+    if (opts.pieceType) {
+      recordMove(ctBuildNotation(opts.pieceType, opts.from, opts.to, opts.captured, opts.wonByDen));
     }
     if (opts.wonByDen) {
       isGameOver = true; lastCtWinWasDen = true;
@@ -268,14 +285,16 @@
   CT.runAI = function (side, depth) {
     const move = CT.chooseAIMove(board, side, depth);
     if (!move) return;
+    const pieceType = getPiece(board, move.from).type;
     const result = CT.applyMove(board, move.from, move.to);
     ctAnimateMove(move.from, move.to);
-    CT._finishTurn({ broadcast: false, from: move.from, to: move.to, wonByDen: result.wonByDen, mover: side, captured: result.captured });
+    CT._finishTurn({ broadcast: false, from: move.from, to: move.to, pieceType, wonByDen: result.wonByDen, mover: side, captured: result.captured });
   };
 
   CT.applyRemote = function (msg) {
     if (msg.type !== "ctMove") return;
+    const pieceType = getPiece(board, msg.from).type;
     const result = CT.applyMove(board, msg.from, msg.to);
     ctAnimateMove(msg.from, msg.to);
-    CT._finishTurn({ broadcast: false, from: msg.from, to: msg.to, wonByDen: result.wonByDen, mover: currentTurn, captured: result.captured });
+    CT._finishTurn({ broadcast: false, from: msg.from, to: msg.to, pieceType, wonByDen: result.wonByDen, mover: currentTurn, captured: result.captured });
   };

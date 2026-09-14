@@ -29,15 +29,15 @@ const ROOM_PREFIX = "kap-";
 let score = { a: 0, b: 0 };
 let lastWinner = null;
 let lastMove = null; // { from: {x,y}, to: {x,y} } — last played move highlight
-let chessMoveHistory = []; // flat list of SAN strings, chess only — status panel
+let moveHistory = []; // flat list of move-notation strings — status panel (chess, Cờ Thú)
 
 function recordLastMove(from, to) {
   if (from && to) lastMove = { from: { x: from.x, y: from.y }, to: { x: to.x, y: to.y } };
   else lastMove = null;
 }
 
-function recordChessMove(san) {
-  chessMoveHistory.push(san);
+function recordMove(notation) {
+  moveHistory.push(notation);
   updateMoveHistoryDisplay();
 }
 
@@ -80,6 +80,7 @@ function resetBoardLocal() {
   boardFlipped = computeBoardFlipped();
   svg.classList.toggle("board-flipped", boardFlipped);
   updateCtDenRotation();
+  updateCtCoordRotation();
   updateChessCoordRotation();
   board = currentModule().createBoard();
   currentTurn = g.firstTurn;
@@ -91,7 +92,7 @@ function resetBoardLocal() {
   ckChainSteps = [];
   lastCtWinWasDen = false;
   chessState = { enPassantTarget: null };
-  chessMoveHistory = [];
+  moveHistory = [];
   overlay.classList.remove("show");
 
   if (activeGame === "cothu") ctSyncPieces();
