@@ -294,6 +294,30 @@
     entry._lastMarker = rect;
   }
 
+  // Chess-only: rings the piece itself rather than filling the whole square
+  // (Cờ Thú keeps the square-fill style via applyLastMoveSquare above).
+  function applyLastMovePieceRing(entry, p, layer, coordX, coordY) {
+    if (entry._lastMarker) {
+      if (entry._lastMarker.parentNode) entry._lastMarker.parentNode.removeChild(entry._lastMarker);
+      entry._lastMarker = null;
+    }
+    if (!lastMove) return;
+    const isFrom = samePoint(lastMove.from, p);
+    const isTo = samePoint(lastMove.to, p);
+    if (!isFrom && !isTo) return;
+    const ring = document.createElementNS(NS, "circle");
+    ring.setAttribute("cx", coordX(p.x));
+    ring.setAttribute("cy", coordY(p.y));
+    ring.setAttribute("r", isTo ? 25 : 20);
+    ring.setAttribute("fill", "none");
+    ring.setAttribute("stroke", "var(--selected)");
+    ring.setAttribute("stroke-width", isTo ? "3" : "2");
+    ring.setAttribute("stroke-opacity", isTo ? "0.9" : "0.45");
+    ring.style.pointerEvents = "none";
+    layer.insertBefore(ring, entry.hit);
+    entry._lastMarker = ring;
+  }
+
   function chessRefreshHighlights() {
     let dests = [];
     if (selected) dests = CHESS.getLegalMoves(board, selected, chessState).map(m => m.to);
@@ -304,7 +328,7 @@
       const isSelected = selected && samePoint(selected, p);
       const isDest = dests.some(m => samePoint(m, p));
       if (entry._marker) { entry.hit.parentNode && chessHitLayer.removeChild(entry._marker); entry._marker = null; }
-      applyLastMoveSquare(entry, p, chessHitLayer, chessCoordX, chessCoordY, CHESS_CELL);
+      applyLastMovePieceRing(entry, p, chessHitLayer, chessCoordX, chessCoordY);
       if (isSelected || isDest) {
         const marker = document.createElementNS(NS, "circle");
         marker.setAttribute("cx", chessCoordX(p.x));
