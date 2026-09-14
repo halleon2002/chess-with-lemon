@@ -333,7 +333,6 @@ svg#board.board-flipped { transform: rotate(180deg); transform-origin: center; }
     text-align: left;
   }
   .game-pick-btn strong { display: block; font-size: 1.1rem; margin-bottom: 4px; color: var(--king-glow); }
-  .game-pick-btn span { font-family: 'Inter', sans-serif; font-size: 0.82rem; color: var(--text-dim-on-chip); font-weight: 400; letter-spacing: 0; }
   .game-pick-btn:hover { border-color: var(--king-glow); background: var(--chip-dark); }
 
   .mode-group { margin-bottom: 18px; text-align: left; }

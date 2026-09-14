@@ -25,8 +25,8 @@ const GAMES = {
     boardMode: "lattice",
     bottomSide: "black",
     rulesNote: {
-      en: "Pieces move one step forward (diagonal or straight). Capture by jumping over an adjacent enemy into the empty point beyond. Captures are <b>mandatory</b> and chain into multi-jumps. Reaching the far row promotes a piece to <b>King</b>, which can move and capture in any direction.",
-      vi: "Quân cờ di chuyển một bước (chéo hoặc thẳng). Ăn quân bằng cách nhảy qua quân đối phương liền kề để đáp xuống ô trống phía sau. Ăn quân là <b>bắt buộc</b> và có thể ăn liên hoàn nhiều lần. Khi đến hàng cuối cùng, quân sẽ được phong <b>Vương</b>, di chuyển và ăn quân theo mọi hướng."
+      en: "Pieces move one step in any direction (diagonal or straight). Capture by jumping over an adjacent enemy into the empty point beyond, and captures may chain into multi-jumps. Reaching the far row promotes a piece to <b>King</b>, which can move and capture in any direction.",
+      vi: "Quân cờ di chuyển một bước (chéo hoặc thẳng) theo mọi hướng. Ăn quân bằng cách nhảy qua quân đối phương liền kề để đáp xuống ô trống phía sau, và có thể ăn liên hoàn nhiều lần. Khi đến hàng cuối cùng, quân sẽ được phong <b>Vương</b>, di chuyển và ăn quân theo mọi hướng."
     },
     colors: { a: "var(--white-pc)", aGlow: "var(--white-glow)", b: "var(--black-pc)", bGlow: "var(--black-glow)" }
   },

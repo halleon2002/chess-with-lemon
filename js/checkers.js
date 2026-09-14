@@ -19,7 +19,6 @@
     return b;
   };
 
-  function ckForwardSign(owner) { return owner === "white" ? 1 : -1; }
   function ckDirsFor(piece) {
     return CK_ALL_DIRS; // men move/capture one step in any direction this point connects to
   }
@@ -94,10 +93,6 @@
     return caps;
   };
 
-  CK.anyCaptureForOwner = function (board, owner) {
-    return getPiecesOf(board, owner).some(p => CK.getCaptures(board, p).length > 0);
-  };
-
   CK.promoteIfNeeded = function (board, point) {
     const piece = getPiece(board, point);
     if (!piece || piece.type === "king") return false;
@@ -147,64 +142,92 @@
     return results.filter(r => r.length > 0);
   };
 
-  CK.chooseAIMove = function (board, side) {
-    const pieces = getPiecesOf(board, side);
-    const candidates = [];
+  // ---- AI: minimax with alpha-beta pruning (same approach as chess.js / cothu.js) ----
+  // The previous AI only looked one ply ahead (score each of its own candidate
+  // moves in isolation). This actually searches out several moves for both
+  // sides, so it catches multi-move tactics and doesn't walk into a capture
+  // two moves out — a real jump in playing strength, not just a bigger number.
+  const CK_VALUES = { man: 100, king: 160 };
 
-    // Every possible capture chain, scored by pieces captured + resulting safety.
-    for (const p of pieces) {
-      for (const chain of CK.enumerateChains(board, p)) {
-        candidates.push({ kind: "capture", from: p, chain, score: CK.evaluateCaptureChain(board, p, chain, side) });
-      }
+  function ckAllMoves(board, side) {
+    const out = [];
+    for (const p of getPiecesOf(board, side)) {
+      for (const chain of CK.enumerateChains(board, p)) out.push({ kind: "capture", from: p, chain });
     }
-    // Every possible plain move.
-    for (const p of pieces) {
-      for (const dest of CK.getPlainMoves(board, p)) {
-        candidates.push({ kind: "plain", from: p, to: dest, score: CK.evaluatePlainMove(board, p, dest, side) });
-      }
+    for (const p of getPiecesOf(board, side)) {
+      for (const dest of CK.getPlainMoves(board, p)) out.push({ kind: "plain", from: p, to: dest });
     }
+    return out;
+  }
 
-    if (candidates.length === 0) return null;
-    candidates.sort((a,b) => b.score - a.score);
-    const best = candidates[0].score;
-    const top = candidates.filter(c => c.score >= best - 0.01);
-    return top[Math.floor(Math.random() * top.length)];
-  };
-
-  CK.evaluateCaptureChain = function (board, from, chain, side) {
-    const after = cloneBoard(board);
-    let cur = from;
-    for (const step of chain) { CK.applyCapture(after, cur, step); cur = step.landing; }
-    let score = chain.length * 60; // capturing is usually strong, but no longer mandatory
-    const opp = CK.other(side);
-    let exposed = false;
-    for (const op of getPiecesOf(after, opp)) {
-      if (CK.getCaptures(after, op).some(c => samePoint(c.mid, cur))) { exposed = true; break; }
+  function ckApplyGenericMove(board, move) {
+    if (move.kind === "capture") {
+      let cur = move.from;
+      for (const step of move.chain) { CK.applyCapture(board, cur, step); cur = step.landing; }
+    } else {
+      CK.applyPlainMove(board, move.from, move.to);
     }
-    if (exposed) score -= 25;
-    return score;
-  };
+  }
 
-  CK.evaluatePlainMove = function (board, from, to, side) {
-    const after = cloneBoard(board);
-    const result = CK.applyPlainMove(after, from, to);
+  // Longest capture chains first — the strongest moves tend to be captures,
+  // so trying them first gives alpha-beta far more to prune on later branches.
+  function ckOrderMoves(moves) {
+    return moves.slice().sort((a, b) => {
+      const av = a.kind === "capture" ? a.chain.length : 0;
+      const bv = b.kind === "capture" ? b.chain.length : 0;
+      return bv - av;
+    });
+  }
+
+  function ckEvaluate(board, forSide) {
     let score = 0;
-    if (result.promoted) score += 50;
-    // Mild preference to advance toward the far row (no longer required, just a nudge).
-    const fs = ckForwardSign(side);
-    score += (to.y - from.y) * fs * 4;
-    // Avoid leaving this piece capturable next turn.
-    const opp = CK.other(side);
-    let exposed = false;
-    for (const op of getPiecesOf(after, opp)) {
-      if (CK.getCaptures(after, op).some(c => samePoint(c.mid, to))) { exposed = true; break; }
+    for (const p of allPoints()) {
+      const piece = getPiece(board, p);
+      if (!piece) continue;
+      let val = CK_VALUES[piece.type];
+      // Mild pull toward the center (more directions to move/capture from there).
+      val += (4 - (Math.abs(p.x - 2) + Math.abs(p.y - 2))) * 1.5;
+      score += piece.owner === forSide ? val : -val;
     }
-    if (exposed) score -= 30;
-    // Mild pull toward board center for better mobility.
-    score -= (Math.abs(to.x - 2) + Math.abs(to.y - 2)) * 1;
     return score;
-  };
+  }
 
+  function ckMinimax(board, depth, alpha, beta, side, rootSide) {
+    const winner = CK.checkWinner(board, side);
+    if (winner) return winner === rootSide ? 100000 + depth : -100000 - depth;
+    if (depth === 0) return ckEvaluate(board, rootSide);
+
+    const moves = ckOrderMoves(ckAllMoves(board, side));
+    const maximizing = side === rootSide;
+    let best = maximizing ? -Infinity : Infinity;
+
+    for (const move of moves) {
+      const nb = cloneBoard(board);
+      ckApplyGenericMove(nb, move);
+      const val = ckMinimax(nb, depth - 1, alpha, beta, CK.other(side), rootSide);
+      if (maximizing) { best = Math.max(best, val); alpha = Math.max(alpha, val); }
+      else { best = Math.min(best, val); beta = Math.min(beta, val); }
+      if (beta <= alpha) break;
+    }
+    return best;
+  }
+
+  CK.chooseAIMove = function (board, side, depth) {
+    depth = depth || 5;
+    const moves = ckOrderMoves(ckAllMoves(board, side));
+    if (moves.length === 0) return null;
+    let bestScore = -Infinity;
+    let bestMoves = [];
+    for (const move of moves) {
+      const nb = cloneBoard(board);
+      ckApplyGenericMove(nb, move);
+      const val = ckMinimax(nb, depth - 1, -Infinity, Infinity, CK.other(side), side);
+      if (val > bestScore) { bestScore = val; bestMoves = [move]; }
+      else if (val === bestScore) { bestMoves.push(move); }
+    }
+    const pick = bestMoves[Math.floor(Math.random() * bestMoves.length)];
+    return pick;
+  };
 
   // ---- Controller API ----
   CK.getLegalPlain = function (point) { return CK.getPlainMoves(board, point); };

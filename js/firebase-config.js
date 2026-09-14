@@ -9,3 +9,10 @@ const firebaseConfig = {
   messagingSenderId: "PASTE_SENDER_ID",
   appId: "PASTE_APP_ID"
 };
+
+if (firebaseConfig.messagingSenderId === "PASTE_SENDER_ID" || firebaseConfig.appId === "PASTE_APP_ID") {
+  console.warn(
+    "[firebase-config] messagingSenderId/appId are still placeholders — " +
+    "copy the real values from Firebase console → Project settings → Your apps."
+  );
+}

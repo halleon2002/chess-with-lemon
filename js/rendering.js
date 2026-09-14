@@ -109,7 +109,7 @@
   }
 
   function renderBoard() {
-    const mode = (G().boardMode) || (G().isGrid ? "cothu" : "lattice");
+    const mode = G().boardMode || "lattice";
     setBoardMode(mode);
     if (mode === "cothu") ctSyncPieces();
     else if (mode === "chess") chessSyncPieces();
@@ -263,13 +263,6 @@
   }
 
 
-  function drawLastMoveMarker(entry, layer, coordX, coordY, cellSize) {
-    if (entry._lastMarker) {
-      if (entry._lastMarker.parentNode) entry._lastMarker.parentNode.removeChild(entry._lastMarker);
-      entry._lastMarker = null;
-    }
-  }
-
   function applyLastMoveSquare(entry, p, layer, coordX, coordY, cell) {
     if (entry._lastMarker) {
       if (entry._lastMarker.parentNode) entry._lastMarker.parentNode.removeChild(entry._lastMarker);
@@ -390,17 +383,17 @@
           img.setAttribute("height", CT_CELL);
           img.setAttribute("preserveAspectRatio", "none");
           img.style.pointerEvents = "none";
-		  if (kind === "river") {
-			img.classList.add("ct-river-water");
-}
-		  if (kind === "den") {
-			img.classList.add("ct-den-img");
-			ctDenImages.push(img);
-}
-		  if (kind === "trap") {
-			img.classList.add("ct-trap-img");
-			ctTrapImages.push(img);
-}
+          if (kind === "river") {
+            img.classList.add("ct-river-water");
+          }
+          if (kind === "den") {
+            img.classList.add("ct-den-img");
+            ctDenImages.push(img);
+          }
+          if (kind === "trap") {
+            img.classList.add("ct-trap-img");
+            ctTrapImages.push(img);
+          }
           // If image fails to load, leave a color underlay
           const under = document.createElementNS(NS, "rect");
           under.setAttribute("x", x); under.setAttribute("y", y);
@@ -490,34 +483,36 @@
 
 const pieceImageCache = {};
 
+// Preloads every image the four games can draw (Cờ Thú animals + terrain,
+// chess pieces) so the first render of each game doesn't show a blank/pop-in
+// frame while the browser fetches them on demand.
 async function preloadPieceImages() {
+  const allSources = Object.assign(
+    {},
+    CT_PIECE_IMAGES,
+    CT_TERRAIN_IMAGES,
+    CHESS_PIECE_IMAGES
+  );
 
-    const tasks = [];
+  const tasks = [];
+  for (const [key, src] of Object.entries(allSources)) {
+    const img = new Image();
+    img.src = src;
+    pieceImageCache[key] = img;
+    tasks.push(new Promise(resolve => {
+      img.onload = resolve;
+      img.onerror = resolve;
+    }));
+  }
 
-    for (const [type, src] of Object.entries(CT_PIECE_IMAGES)) {
+  await Promise.all(tasks);
 
-        const img = new Image();
-
-        img.src = src;
-
-        pieceImageCache[type] = img;
-
-        tasks.push(
-            new Promise(resolve => {
-                img.onload = resolve;
-                img.onerror = resolve;
-            })
-        );
-    }
-
-    await Promise.all(tasks);
-
-    // Force browser to decode every image
-    await Promise.all(
-        Object.values(pieceImageCache).map(img =>
-            img.decode ? img.decode().catch(() => {}) : Promise.resolve()
-        )
-    );
+  // Force browser to decode every image
+  await Promise.all(
+    Object.values(pieceImageCache).map(img =>
+      img.decode ? img.decode().catch(() => {}) : Promise.resolve()
+    )
+  );
 }
 
   function ctMakePieceShape(piece) {

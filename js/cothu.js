@@ -217,13 +217,13 @@
 
   function ctSquareName(p) { return String.fromCharCode(97 + p.x) + (CT_ROWS - p.y); }
 
-const CT_SAN_LETTER = { rat:"R", cat:"C", dog:"D", wolf:"W", leopard:"P", tiger:"T", lion:"L", elephant:"E" };
-
 // Builds short move notation, e.g. "Txd4" (Tiger captures on d4), "R#" for a
 // den-winning move. "P" is used for Leopard since "L" is taken by Lion —
 // matches this project's own asset naming (leopard's image is panther.gif).
+// Reuses CT.LETTER (same rat..elephant -> letter mapping used for the on-board
+// piece labels) instead of keeping a second, easily-drifting copy of it.
 function ctBuildNotation(pieceType, from, to, captured, wonByDen) {
-  let notation = CT_SAN_LETTER[pieceType] + (captured ? "x" : "") + ctSquareName(to);
+  let notation = CT.LETTER[pieceType] + (captured ? "x" : "") + ctSquareName(to);
   if (wonByDen) notation += "#";
   return notation;
 }
