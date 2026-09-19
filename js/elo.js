@@ -60,7 +60,11 @@ function applyEloResult(game, actualScore) {
 function updateEloDisplay() {
   const line = document.getElementById("eloRatingLine");
   if (!line) return;
-  if (!myElo || !activeGame) { line.textContent = ""; return; }
+  // activeGame lives in games.js, which loads after this file. The auth
+  // state can (rarely, e.g. on a slow connection with a fast cached login)
+  // resolve before games.js has run, so guard against that ordering race
+  // instead of throwing a ReferenceError.
+  if (typeof activeGame === "undefined" || !myElo || !activeGame) { line.textContent = ""; return; }
   line.textContent = t("yourRating", myElo[activeGame]);
 }
 

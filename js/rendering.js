@@ -932,7 +932,8 @@ async function preloadPieceImages() {
     turnDot.classList.toggle("a", turnIsA);
     turnDot.classList.toggle("b", !turnIsA);
 
-    if (activeGame === "kap") {
+    if (!board) { pieceCountLabel.textContent = ""; }
+    else if (activeGame === "kap") {
       pieceCountLabel.textContent = t("pawnsCount", KAP.countPawns(board));
     } else if (activeGame === "checkers") {
       const w = getPiecesOf(board, "white").length, bl = getPiecesOf(board, "black").length;
