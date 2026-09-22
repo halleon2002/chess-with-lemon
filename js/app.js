@@ -265,8 +265,24 @@ function showLandingUI() {
   applyStaticTranslations();
   langToggleBtn.textContent = lang === "en" ? "VI" : "EN";
 
-  showLandingUI();
-  gameTitle.textContent = t("appTitle");
-  subtitle.textContent = t("chooseGameToBegin");
-  rulesNote.innerHTML = "";
+  // preloadPieceImages() can take a few seconds (more so now that it also
+  // preloads chess pieces and Cờ Thú terrain art, not just the animal
+  // icons). The player can pick a game and hit Start well before this
+  // promise settles, since it isn't awaited anywhere else. If that
+  // happened, don't reset the screen they're already playing on back to
+  // the landing/game-choice screen underneath them.
+  if (document.body.classList.contains("playing")) {
+    // applyStaticTranslations() above just overwrote #gameTitle/#subtitle
+    // with their landing-screen defaults — those two elements double as the
+    // in-game title/status line once a game is running. Put the game's own
+    // text back, the same way refreshAllText() already does on a language
+    // switch mid-game.
+    applyThemeColors();
+    updateSubtitle();
+  } else {
+    showLandingUI();
+    gameTitle.textContent = t("appTitle");
+    subtitle.textContent = t("chooseGameToBegin");
+    rulesNote.innerHTML = "";
+  }
 })();
