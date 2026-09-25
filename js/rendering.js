@@ -107,6 +107,60 @@
     if (mode === "chess" && !chessBoardBuilt) { buildChessBoard(); chessBoardBuilt = true; }
   }
 
+  // On phone, the CSS attempt at "shrink the board to whatever height is
+  // left" (flexbox + auto-width-from-viewBox-aspect-ratio) turned out not
+  // to be reliable across real devices, even though it worked in desktop
+  // devtools' phone emulation. This does the same job without depending on
+  // any of that: it directly measures how much vertical space is actually
+  // left below the header/status bar and above the controls on THIS
+  // device, and sets the board's width/height in real pixels itself, using
+  // the SVG's own viewBox to keep the aspect ratio correct. No flexbox
+  // percentage-height or SVG intrinsic-sizing behavior involved anywhere.
+  function fitBoardForPhone() {
+    if (!window.matchMedia("(max-width: 760px)").matches || !document.body.classList.contains("playing")) {
+      svg.style.width = "";
+      svg.style.height = "";
+      return;
+    }
+    const boardRow = document.querySelector(".board-row");
+    const controls = document.querySelector(".controls");
+    const wrap = document.querySelector(".board-wrap");
+    if (!boardRow || !wrap) return;
+
+    const vb = svg.viewBox && svg.viewBox.baseVal;
+    const aspect = (vb && vb.width && vb.height) ? (vb.width / vb.height) : 1;
+
+    const viewportH = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    const rowTop = boardRow.getBoundingClientRect().top;
+    let controlsSpace = 0;
+    if (controls) {
+      const cs = getComputedStyle(controls);
+      controlsSpace = controls.getBoundingClientRect().height
+        + (parseFloat(cs.marginTop) || 0) + (parseFloat(cs.marginBottom) || 0);
+    }
+    const bottomSafety = 10;
+
+    let availableHeight = viewportH - rowTop - controlsSpace - bottomSafety;
+    availableHeight = Math.max(120, availableHeight);
+
+    const wrapWidth = wrap.getBoundingClientRect().width || window.innerWidth;
+    let width = availableHeight * aspect;
+    let height = availableHeight;
+    if (width > wrapWidth) {
+      width = wrapWidth;
+      height = width / aspect;
+    }
+
+    svg.style.width = width + "px";
+    svg.style.height = height + "px";
+  }
+  // Re-measure whenever the layout could plausibly have changed: after
+  // (re)building the board, on resize/orientation change (phones fire
+  // both), and — since fonts/webfont swaps can shift the header's height
+  // slightly after first paint — once more shortly after each of those.
+  window.addEventListener("resize", () => requestAnimationFrame(fitBoardForPhone));
+  window.addEventListener("orientationchange", () => setTimeout(fitBoardForPhone, 150));
+
   function renderBoard() {
     const mode = G().boardMode || "lattice";
     setBoardMode(mode);

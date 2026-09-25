@@ -102,6 +102,8 @@ function resetBoardLocal() {
   updateStatus();
   refreshHighlights();
   updateMoveHistoryDisplay();
+  // Layout has to actually paint before measuring it, hence the next-frame.
+  requestAnimationFrame(fitBoardForPhone);
 }
 
 function restart() {
@@ -235,6 +237,7 @@ function refreshAllText() {
   applyThemeColors();
   updateStatus();
   updateSubtitle();
+  requestAnimationFrame(fitBoardForPhone);
 }
 langToggleBtn.addEventListener("click", () => {
   lang = lang === "en" ? "vi" : "en";
