@@ -948,7 +948,12 @@ async function preloadPieceImages() {
   // Shown for games that have their own move notation (chess, Cờ Thú).
   const MOVE_HISTORY_GAMES = ["chess", "cothu"];
   function updateMoveHistoryDisplay() {
-    if (!MOVE_HISTORY_GAMES.includes(activeGame) || moveHistory.length === 0) {
+    const supportsHistory = MOVE_HISTORY_GAMES.includes(activeGame) && moveHistory.length > 0;
+    // On phone, the move list would eat into the limited vertical space the
+    // board itself needs mid-game — keep it hidden there until the game
+    // actually ends (win, loss, or draw), then it's fine to show.
+    const hiddenForPhoneMidGame = !isGameOver && window.matchMedia("(max-width: 760px)").matches;
+    if (!supportsHistory || hiddenForPhoneMidGame) {
       moveHistoryPanel.style.display = "none";
       moveHistoryList.innerHTML = "";
       return;
@@ -1007,6 +1012,9 @@ async function preloadPieceImages() {
     overlaySubtitle.textContent = t("chessStalemate");
     renderScoreLine();
     maybeUpdateEloAfterGame(0.5);
+    // isGameOver is already true by now — reveal the move list on phone,
+    // where updateMoveHistoryDisplay() kept it hidden during play.
+    updateMoveHistoryDisplay();
   }
 
   function showGameOver(winner) {
@@ -1016,6 +1024,9 @@ async function preloadPieceImages() {
     if (isA) score.a++; else score.b++;
     renderGameOverPanel(winner);
     maybeUpdateEloAfterGame(winner === humanSide ? 1 : 0);
+    // isGameOver is already true by now — reveal the move list on phone,
+    // where updateMoveHistoryDisplay() kept it hidden during play.
+    updateMoveHistoryDisplay();
   }
 
   function renderScoreLine() {
