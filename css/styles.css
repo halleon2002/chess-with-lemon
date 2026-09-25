@@ -185,51 +185,6 @@
       max-height: 160px;
       margin-top: 14px;
     }
-
-    /* Lock the page itself so it can never be scrolled while playing — on a
-       short phone screen there just isn't room to scroll without the board
-       (or the header above it) sliding out of view. Instead, everything
-       from the top bar down to the New Game/Change Mode buttons is fit into
-       one flex column that shares out the viewport height, and the board
-       shrinks (preserving its aspect ratio) to whatever's left over after
-       the header/status/controls take their share.
-       100dvh (not 100vh) tracks the *current* visible height, shrinking
-       when the mobile browser's own address bar is on screen. */
-    html, body { height: 100%; overflow: hidden; }
-    body { height: 100dvh; padding: 10px 12px 8px; }
-
-    #appRoot { flex: 1; min-height: 0; width: 100%; }
-
-    .top-bar { margin-bottom: 6px; }
-    h1 { margin: 2px 0; }
-    .subtitle { margin-bottom: 8px; }
-    .status-bar { margin-bottom: 10px; padding: 8px 16px; }
-    .controls { margin-top: 10px; flex-shrink: 0; }
-
-    .board-row { flex: 1; min-height: 0; width: 100%; }
-    .board-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 0;
-    }
-    /* Overrides the width-driven sizing above: here the SVG grows to fill
-       whatever height is left, and its width follows from its own aspect
-       ratio (capped so it never gets wider than the screen). */
-    svg#board {
-      flex: 1 1 auto;
-      min-height: 0;
-      width: auto;
-      height: 100%;
-      max-width: 100%;
-    }
-
-    /* A modal (mode select, game choice, game over, login) can still be
-       taller than a very short screen. Page scroll is locked above, so let
-       these scroll internally instead, rather than clipping their bottom
-       (and whatever button lives there) off-screen with no way to reach it. */
-    .overlay { overflow-y: auto; }
-    .overlay-card { max-height: calc(100dvh - 32px); overflow-y: auto; }
   }
 
   svg#board { width: 100%; height: auto; display: block; filter: drop-shadow(0 12px 28px rgba(0,0,0,0.45)); }
@@ -732,4 +687,62 @@ body.playing {
     linear-gradient(var(--photo-overlay-3), var(--photo-overlay-4)),
     var(--bg-photo) center center / cover no-repeat fixed;
   background-color: var(--bg);
+}
+
+/* Placed at the very end of the file on purpose: several rules above (the
+   ones setting svg#board's width/height, .controls' margin, .top-bar's
+   margin) repeat properties this block also sets. CSS resolves same-
+   specificity conflicts by source order, so this block has to come after
+   ALL of them or it silently loses — which is exactly what happened the
+   first time this was added higher up in the file: svg#board kept using
+   its plain width:100%/height:auto rule (declared further down than where
+   this block used to live), so the board never actually shrank to fit, and
+   New Game/Change Mode ended up pushed below the now-unscrollable screen. */
+@media (max-width: 760px) {
+  /* Lock the page itself so it can never be scrolled while playing — on a
+     short phone screen there just isn't room to scroll without the board
+     (or the header above it) sliding out of view. Instead, everything from
+     the top bar down to the New Game/Change Mode buttons is fit into one
+     flex column that shares out the viewport height, and the board shrinks
+     (preserving its aspect ratio) to whatever's left over after the
+     header/status/controls take their share.
+     100dvh (not 100vh) tracks the *current* visible height, shrinking when
+     the mobile browser's own address bar is on screen. */
+  html, body { height: 100%; overflow: hidden; }
+  body { height: 100dvh; padding: 10px 12px 8px; }
+
+  #appRoot { flex: 1; min-height: 0; width: 100%; }
+
+  .top-bar { margin-bottom: 6px; }
+  h1 { margin: 2px 0; }
+  .subtitle { margin-bottom: 8px; }
+  .status-bar { margin-bottom: 10px; padding: 8px 16px; }
+  .controls { margin-top: 10px; flex-shrink: 0; }
+
+  .board-row { flex: 1; min-height: 0; width: 100%; }
+  .board-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 0;
+  }
+  /* flex-basis 0% (not "auto") is what actually makes this work: it tells
+     the board to ignore its own natural size entirely and take its height
+     purely from flex-grow filling whatever space is left in .board-wrap.
+     Width then follows automatically from the SVG's own aspect ratio
+     (derived from its viewBox), capped so it can't exceed the phone's
+     width either. */
+  svg#board {
+    flex: 1 1 0%;
+    min-height: 0;
+    width: auto;
+    max-width: 100%;
+  }
+
+  /* A modal (mode select, game choice, game over, login) can still be
+     taller than a very short screen. Page scroll is locked above, so let
+     these scroll internally instead, rather than clipping their bottom
+     (and whatever button lives there) off-screen with no way to reach it. */
+  .overlay { overflow-y: auto; }
+  .overlay-card { max-height: calc(100dvh - 32px); overflow-y: auto; }
 }
