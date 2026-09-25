@@ -128,7 +128,6 @@ function openGameChoiceScreen() {
   showLandingUI();
   gameTitle.textContent = t("appTitle");
   subtitle.textContent = t("chooseGameToBegin");
-  rulesNote.innerHTML = "";
 }
 
 function updateDifficultyVisibility() {
@@ -283,6 +282,5 @@ function showLandingUI() {
     showLandingUI();
     gameTitle.textContent = t("appTitle");
     subtitle.textContent = t("chooseGameToBegin");
-    rulesNote.innerHTML = "";
   }
 })();

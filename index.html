@@ -42,15 +42,21 @@
     </div>
   </div>
 
-  <div id="userBadge" class="user-badge hidden">
-    <span id="userEmailLabel"></span>
-    <button id="logoutBtn" data-i18n="logoutBtn">Log out</button>
-  </div>
-
   <div id="appRoot" class="hidden">
 
-  <button id="langToggle" class="lang-toggle">VI</button>
-  <button id="themeToggle" class="theme-toggle" aria-label="Toggle light/dark theme">🌙</button>
+  <!-- Scrolls with the page instead of floating fixed over the board — a
+       fixed header used to end up covering the board on tall boards / small
+       phone screens once the player scrolled down. -->
+  <div class="top-bar">
+    <div id="userBadge" class="user-badge hidden">
+      <span id="userEmailLabel"></span>
+      <button id="logoutBtn" data-i18n="logoutBtn">Log out</button>
+    </div>
+    <div class="top-bar-right">
+      <button id="themeToggle" class="theme-toggle" aria-label="Toggle light/dark theme">🌙</button>
+      <button id="langToggle" class="lang-toggle">VI</button>
+    </div>
+  </div>
 
   <h1 id="gameTitle" data-i18n="appTitle">Board Games</h1>
   <div class="subtitle" id="subtitle" data-i18n="chooseGameToBegin">Choose a game to begin.</div>
@@ -93,8 +99,6 @@
     <button id="restartBtn" data-i18n="newGame">New Game</button>
     <button id="changeModeBtn" data-i18n="changeMode">Change Mode</button>
   </div>
-
-  <div class="rules-note" id="rulesNote"></div>
 
   <!-- Top-level game chooser -->
   <div class="overlay show" id="gameChoiceScreen">

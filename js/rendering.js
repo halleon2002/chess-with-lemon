@@ -8,7 +8,6 @@
   const pieceCountLabel = document.getElementById("pieceCount");
   const subtitle = document.getElementById("subtitle");
   const gameTitle = document.getElementById("gameTitle");
-  const rulesNote = document.getElementById("rulesNote");
   const overlay = document.getElementById("overlay");
   const overlayTitle = document.getElementById("overlayTitle");
   const overlaySubtitle = document.getElementById("overlaySubtitle");
@@ -920,7 +919,6 @@ async function preloadPieceImages() {
     return (isA ? g.sideA.label : g.sideB.label)[lang];
   }
   function gameTitleText(g) { return g.title[lang]; }
-  function rulesNoteHtml(g) { return g.rulesNote[lang]; }
 
   function updateStatus() {
     const g = G();
@@ -974,7 +972,6 @@ async function preloadPieceImages() {
     document.documentElement.style.setProperty("--dot-b", g.colors.b);
     document.documentElement.style.setProperty("--dot-b-glow", g.colors.bGlow);
     gameTitle.textContent = gameTitleText(g);
-    rulesNote.innerHTML = rulesNoteHtml(g);
   }
 
   function updateSubtitle() {
