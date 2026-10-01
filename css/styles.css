@@ -431,6 +431,11 @@ svg#board.board-flipped { transform: rotate(180deg); transform-origin: center; }
   }
 
   .top-bar {
+    position: relative;
+    /* Above .overlay (z-index 10) and the chat button/panel (24/25), so the
+       logout badge and theme/language toggles stay reachable even while a
+       modal (Choose a Game, mode select, game over, login) is showing. */
+    z-index: 30;
     display: flex;
     align-items: center;
     justify-content: space-between;
