@@ -51,7 +51,14 @@ function applyEloResult(game, actualScore) {
   const expected = expectedScore(before, opponentElo[game]);
   const after = Math.round(before + ELO_K * (actualScore - expected));
   myElo[game] = after;
-  db.collection("elo").doc(currentUser.uid).update({ [game]: after })
+  // set(..., {merge:true}) instead of update(): update() refuses to touch a
+  // document that doesn't exist yet, which is exactly what happens if the
+  // very first loadMyElo() read ever fails once (e.g. security rules still
+  // propagating right after being published) — it never gets to create the
+  // doc, and every save after that permanently fails with "No document to
+  // update". merge:true creates the doc on first use and otherwise only
+  // touches this one game's field, leaving the others untouched either way.
+  db.collection("elo").doc(currentUser.uid).set({ [game]: after }, { merge: true })
     .catch(e => console.error("[Elo] failed to save rating:", e));
   updateEloDisplay();
   return { before, after, delta: after - before };
