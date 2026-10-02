@@ -40,12 +40,7 @@
     --chess-sq-stroke: rgba(238, 230, 212, 0.18);
   }
 
-  /* Light theme — only page chrome (backgrounds, panels, borders, body
-     text) changes. Board/piece colors and the small "chip" surfaces that
-     carry bright accent-colored text (score line, room code, active mode
-     button, game-pick cards) stay on a dark surface in both themes so
-     king/pawn/white/black accent hues stay readable without per-color
-     light variants. */
+ 
   [data-theme="light"] {
     --bg: #f5f2ea;
     --bg-gradient-top: #ffffff;
