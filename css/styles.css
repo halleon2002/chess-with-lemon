@@ -324,16 +324,66 @@ svg#board.board-flipped { transform: rotate(180deg); transform-origin: center; }
   .elo-delta-line.elo-up { color: #4caf7d; }
   .elo-delta-line.elo-down { color: var(--capture); }
 
-  .game-pick-row { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
+  /* Game picker: a grid of icon + name cards. Two columns at the overlay's
+     own width; the query below drops to one column if a future game roster
+     ever makes two columns too tight on a narrow phone. */
+  .game-pick-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 10px;
+  }
   .game-pick-btn {
-    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 10px;
     font-size: 1.05rem;
     background: var(--chip-dark);
     border: 1px solid var(--border);
-    text-align: left;
+    text-align: center;
   }
-  .game-pick-btn strong { display: block; font-size: 1.1rem; margin-bottom: 4px; color: var(--king-glow); }
+  .game-pick-btn strong { font-size: 0.92rem; line-height: 1.25; color: var(--king-glow); }
   .game-pick-btn:hover { border-color: var(--king-glow); background: var(--chip-dark); }
+  .game-pick-btn:hover .game-pick-icon { border-color: var(--king-glow); }
+
+  .game-pick-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 14px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: border-color 0.15s ease;
+  }
+  .game-pick-icon svg { width: 72%; height: 72%; display: block; }
+
+  /* Kings & Pawns: a king piece (crowned circle) beside a smaller pawn. */
+  .game-pick-icon-kap .gpi-a { fill: var(--king); }
+  .game-pick-icon-kap .gpi-a-line { fill: var(--king-glow); }
+  .game-pick-icon-kap .gpi-b { fill: var(--pawn); }
+
+  /* Checkers: two overlapping discs, light piece over dark piece. */
+  .game-pick-icon-checkers .gpi-a { fill: var(--white-pc); }
+  .game-pick-icon-checkers .gpi-a-line { stroke: var(--black-pc); stroke-width: 2; opacity: 0.35; }
+  .game-pick-icon-checkers .gpi-b { fill: var(--black-pc); }
+  .game-pick-icon-checkers .gpi-b-line { stroke: var(--white-pc); stroke-width: 2; opacity: 0.35; }
+
+  /* Cờ Thú: a paw print in the jungle board's red/yellow palette. */
+  .game-pick-icon-cothu .gpi-a { fill: var(--ct-red); }
+  .game-pick-icon-cothu .gpi-b { fill: var(--ct-yellow); }
+
+  /* Chess: a simple king silhouette, ivory piece with a dark outline. */
+  .game-pick-icon-chess .gpi-a {
+    fill: var(--white-pc);
+    stroke: var(--black-pc);
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+  }
 
   .mode-group { margin-bottom: 18px; text-align: left; }
   .mode-label {
