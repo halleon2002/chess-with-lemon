@@ -108,10 +108,78 @@
       <div class="game-pick-row">
         <button class="game-pick-btn" data-game="kap">
           <span class="game-pick-icon game-pick-icon-kap" aria-hidden="true">
-            <svg viewBox="0 0 64 64">
-              <circle class="gpi-a" cx="24" cy="38" r="14"/>
-              <path class="gpi-a-line" d="M14 28 L18 18 L24 25 L30 15 L36 25 L24 28 Z"/>
-              <circle class="gpi-b" cx="46" cy="42" r="9"/>
+            <svg viewBox="0 0 680 760">
+              <defs>
+                <linearGradient id="kapIconBg" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#0a1d3e"/>
+                  <stop offset="55%" stop-color="#123569"/>
+                  <stop offset="100%" stop-color="#0a1d3e"/>
+                </linearGradient>
+                <radialGradient id="kapIconGlow" cx="50%" cy="62%" r="42%">
+                  <stop offset="0%" stop-color="#fdf6e3" stop-opacity="0.95"/>
+                  <stop offset="45%" stop-color="#cfe0ff" stop-opacity="0.35"/>
+                  <stop offset="100%" stop-color="#0a1d3e" stop-opacity="0"/>
+                </radialGradient>
+              </defs>
+              <rect x="0" y="0" width="680" height="760" fill="url(#kapIconBg)"/>
+              <circle cx="340" cy="400" r="300" fill="none" stroke="#9fb6e8" stroke-width="0.6" opacity="0.18"/>
+              <circle cx="340" cy="400" r="255" fill="none" stroke="#9fb6e8" stroke-width="0.5" opacity="0.12"/>
+              <g stroke="#cfe0ff" stroke-width="0.5" opacity="0.2" fill="none">
+                <line x1="150" y1="90" x2="60" y2="40"/>
+                <line x1="150" y1="90" x2="95" y2="150"/>
+                <line x1="530" y1="90" x2="620" y2="40"/>
+                <line x1="530" y1="90" x2="585" y2="150"/>
+                <line x1="90" y1="600" x2="40" y2="660"/>
+                <line x1="590" y1="600" x2="640" y2="660"/>
+              </g>
+              <g fill="#eef3ff">
+                <g opacity="0.85" transform="translate(60,40)"><path d="M0 -8 L2 -2 L8 0 L2 2 L0 8 L-2 2 L-8 0 L-2 -2 Z"/></g>
+                <g opacity="0.75" transform="translate(620,46) scale(0.8)"><path d="M0 -8 L2 -2 L8 0 L2 2 L0 8 L-2 2 L-8 0 L-2 -2 Z"/></g>
+                <g opacity="0.7" transform="translate(40,660) scale(0.7)"><path d="M0 -8 L2 -2 L8 0 L2 2 L0 8 L-2 2 L-8 0 L-2 -2 Z"/></g>
+                <g opacity="0.7" transform="translate(640,655) scale(0.9)"><path d="M0 -8 L2 -2 L8 0 L2 2 L0 8 L-2 2 L-8 0 L-2 -2 Z"/></g>
+                <circle cx="95" cy="150" r="2.4" opacity="0.6"/>
+                <circle cx="585" cy="150" r="2.2" opacity="0.55"/>
+                <circle cx="130" cy="230" r="1.8" opacity="0.5"/>
+                <circle cx="560" cy="250" r="2" opacity="0.5"/>
+                <circle cx="70" cy="340" r="1.6" opacity="0.4"/>
+                <circle cx="615" cy="360" r="1.8" opacity="0.45"/>
+                <circle cx="90" cy="600" r="2" opacity="0.5"/>
+                <circle cx="590" cy="600" r="2.2" opacity="0.5"/>
+                <circle cx="160" cy="680" r="1.6" opacity="0.4"/>
+                <circle cx="520" cy="690" r="1.8" opacity="0.45"/>
+                <circle cx="340" cy="60" r="2.4" opacity="0.6"/>
+                <circle cx="230" cy="700" r="1.6" opacity="0.4"/>
+              </g>
+              <rect x="0" y="0" width="680" height="760" fill="url(#kapIconGlow)"/>
+              <g fill="none" stroke="#f4e3b8" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+                <path d="M230 420 C195 410 180 435 188 470 C194 495 218 505 242 495" opacity="0.85"/>
+                <path d="M242 495 C262 505 284 495 280 472" opacity="0.85"/>
+                <path d="M450 420 C485 410 500 435 492 470 C486 495 462 505 438 495" opacity="0.85"/>
+                <path d="M438 495 C418 505 396 495 400 472" opacity="0.85"/>
+                <path d="M330 190 L330 165 M350 190 L350 165 M320 172 L360 172" stroke-width="5"/>
+                <circle cx="340" cy="207" r="10"/>
+                <path d="M295 245 Q307 228 320 245 Q332 228 340 245 Q348 228 360 245 Q372 228 385 245 L378 262 L302 262 Z"/>
+                <path d="M310 262 C305 300 310 320 340 330 C370 320 375 300 370 262" stroke-width="2"/>
+                <path d="M320 330 C290 360 282 410 300 470 C310 505 370 505 380 470 C398 410 390 360 360 330" stroke-width="2.2"/>
+                <path d="M278 470 C310 450 370 450 402 470 L412 505 C360 530 320 530 268 505 Z" stroke-width="2.2"/>
+                <ellipse cx="340" cy="512" rx="78" ry="14" stroke-width="2"/>
+              </g>
+              <g fill="none" stroke="#f4e3b8" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" opacity="0.95">
+                <g transform="translate(190,0)">
+                  <circle cx="0" cy="400" r="22"/>
+                  <path d="M-20 428 C-25 448 -22 462 0 468 C22 462 25 448 20 428" stroke-width="1.6"/>
+                  <path d="M-15 468 C-32 485 -36 512 -25 540 C-18 558 18 558 25 540 C36 512 32 485 15 468"/>
+                  <path d="M-42 540 C-22 528 22 528 42 540 L48 560 C15 574 -15 574 -48 560 Z"/>
+                  <ellipse cx="0" cy="564" rx="46" ry="9"/>
+                </g>
+                <g transform="translate(490,0)">
+                  <circle cx="0" cy="400" r="22"/>
+                  <path d="M-20 428 C-25 448 -22 462 0 468 C22 462 25 448 20 428" stroke-width="1.6"/>
+                  <path d="M-15 468 C-32 485 -36 512 -25 540 C-18 558 18 558 25 540 C36 512 32 485 15 468"/>
+                  <path d="M-42 540 C-22 528 22 528 42 540 L48 560 C15 574 -15 574 -48 560 Z"/>
+                  <ellipse cx="0" cy="564" rx="46" ry="9"/>
+                </g>
+              </g>
             </svg>
           </span>
           <strong data-i18n="gcKapTitle">Kings &amp; Pawns</strong>

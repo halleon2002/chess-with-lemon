@@ -40,7 +40,12 @@
     --chess-sq-stroke: rgba(238, 230, 212, 0.18);
   }
 
- 
+  /* Light theme — only page chrome (backgrounds, panels, borders, body
+     text) changes. Board/piece colors and the small "chip" surfaces that
+     carry bright accent-colored text (score line, room code, active mode
+     button, game-pick cards) stay on a dark surface in both themes so
+     king/pawn/white/black accent hues stay readable without per-color
+     light variants. */
   [data-theme="light"] {
     --bg: #f5f2ea;
     --bg-gradient-top: #ffffff;
@@ -357,10 +362,8 @@ svg#board.board-flipped { transform: rotate(180deg); transform-origin: center; }
   }
   .game-pick-icon svg { width: 72%; height: 72%; display: block; }
 
-  /* Kings & Pawns: a king piece (crowned circle) beside a smaller pawn. */
-  .game-pick-icon-kap .gpi-a { fill: var(--king); }
-  .game-pick-icon-kap .gpi-a-line { fill: var(--king-glow); }
-  .game-pick-icon-kap .gpi-b { fill: var(--pawn); }
+  /* Kings & Pawns: a full custom illustration (its own navy/gold palette,
+     not the theme vars) — see the inline SVG in index.html. */
 
   /* Checkers: two overlapping discs, light piece over dark piece. */
   .game-pick-icon-checkers .gpi-a { fill: var(--white-pc); }
