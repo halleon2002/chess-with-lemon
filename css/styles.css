@@ -371,9 +371,8 @@ svg#board.board-flipped { transform: rotate(180deg); transform-origin: center; }
   .game-pick-icon-checkers .gpi-b { fill: var(--black-pc); }
   .game-pick-icon-checkers .gpi-b-line { stroke: var(--white-pc); stroke-width: 2; opacity: 0.35; }
 
-  /* Cờ Thú: a paw print in the jungle board's red/yellow palette. */
-  .game-pick-icon-cothu .gpi-a { fill: var(--ct-red); }
-  .game-pick-icon-cothu .gpi-b { fill: var(--ct-yellow); }
+  /* Cờ Thú: a full custom cartoon illustration (lion, elephant, panther)
+     with its own palette, not the theme vars — see the inline SVG in index.html. */
 
   /* Chess: a simple king silhouette, ivory piece with a dark outline. */
   .game-pick-icon-chess .gpi-a {
