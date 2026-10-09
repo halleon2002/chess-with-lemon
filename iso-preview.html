@@ -31,6 +31,7 @@
     <label><span>Tilt: <b id="pitchVal">52</b>°</span><input id="pitch" type="range" min="34" max="72" value="52"></label>
     <label class="row"><input id="flip" type="checkbox"> View from Red's side (Red at the bottom)</label>
     <label class="row"><input id="pieces" type="checkbox" checked> Show placeholder pieces</label>
+    <label class="row"><input id="animate" type="checkbox" checked> Animate water, grass, fireflies</label>
     <div class="btns">
       <button data-preset="26,52">Phone (portrait)</button>
       <button data-preset="34,46">Wide</button>
@@ -58,7 +59,7 @@
   function draw() {
     scene = CTIso.render({
       yaw: +$("yaw").value, pitch: +$("pitch").value, scale: 64,
-      flip: $("flip").checked, pieces: $("pieces").checked ? LAYOUT : []
+      flip: $("flip").checked, pieces: $("pieces").checked ? LAYOUT : [], animate: $("animate").checked
     });
     stage.innerHTML = scene.svg;
     const svg = stage.querySelector("svg");
@@ -109,7 +110,7 @@
   }
 
   function sync() { $("yawVal").textContent = $("yaw").value; $("pitchVal").textContent = $("pitch").value; draw(); }
-  ["yaw", "pitch", "flip", "pieces"].forEach(id => $(id).addEventListener("input", sync));
+  ["yaw", "pitch", "flip", "pieces", "animate"].forEach(id => $(id).addEventListener("input", sync));
   document.querySelectorAll("[data-preset]").forEach(b => b.addEventListener("click", () => {
     const [y, p] = b.dataset.preset.split(",");
     $("yaw").value = y; $("pitch").value = p; sync();
