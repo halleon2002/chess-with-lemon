@@ -56,7 +56,7 @@
   const LETTER = { rat: "R", cat: "C", dog: "D", wolf: "W", leopard: "P", tiger: "T", lion: "L", elephant: "E" };
 
   function render(opts) {
-    const o = Object.assign({ yaw: 34, pitch: 50, scale: 64, flip: false, pieces: [], seed: 7, background: true }, opts || {});
+    const o = Object.assign({ yaw: 34, pitch: 50, scale: 64, flip: false, pieces: [], seed: 7, background: true, animate: true }, opts || {});
     const th = o.yaw * Math.PI / 180, ph = o.pitch * Math.PI / 180;
     const cs = Math.cos(th), sn = Math.sin(th), sp = Math.sin(ph), cp = Math.cos(ph), S = o.scale;
 
@@ -71,6 +71,18 @@
     const flip = !!o.flip;
     const toLogical = (di, dj) => flip ? [COLS - 1 - di, ROWS - 1 - dj] : [di, dj];
     const toDisplay = toLogical; // the flip is its own inverse
+
+    // ---- SMIL animation helpers (they return plain content / "" when opts.animate is false) ----
+    const A = o.animate !== false;
+    const f2 = n => Math.round(n * 100) / 100;
+    const anim = (attr, values, dur, begin, extra) => A
+      ? '<animate attributeName="' + attr + '" values="' + values + '" dur="' + f2(dur) + 's" begin="-' + f2(Math.abs(begin)) + 's" repeatCount="indefinite"' + (extra || "") + "/>" : "";
+    const EASE = ' calcMode="spline" keyTimes="0;0.5;1" keySplines="0.45 0 0.55 1;0.45 0 0.55 1"';
+    const swayG = (cx, cy, deg, dur, begin, content) => A
+      ? '<g><animateTransform attributeName="transform" type="rotate" values="' + (-deg) + " " + f2(cx) + " " + f2(cy) + ";" + deg + " " + f2(cx) + " " + f2(cy) + ";" + (-deg) + " " + f2(cx) + " " + f2(cy) +
+        '" dur="' + f2(dur) + 's" begin="-' + f2(Math.abs(begin)) + 's" repeatCount="indefinite"' + EASE + "/>" + content + "</g>" : content;
+    const driftG = (dx, dy, dur, begin, content) => A
+      ? '<g><animateTransform attributeName="transform" type="translate" values="0 0;' + dx + " " + dy + ';0 0" dur="' + f2(dur) + 's" begin="-' + f2(Math.abs(begin)) + 's" repeatCount="indefinite"' + EASE + "/>" + content + "</g>" : content;
 
     // vertical wall between two ground points, split into horizontal colour bands
     function vface(p0, p1, bands, mortar) {
@@ -149,8 +161,10 @@
       for (let t = 0; t < tufts; t++) {
         const u = di + 0.12 + rand() * 0.76, v = dj + 0.12 + rand() * 0.76;
         const b = P(u, v, h);
-        s += '<path d="M' + r1(b[0] - 3) + " " + r1(b[1]) + " L" + r1(b[0] - 4.5) + " " + r1(b[1] - 8) + " L" + r1(b[0] - 0.8) + " " + r1(b[1] - 3.5) +
+        const tuft = '<path d="M' + r1(b[0] - 3) + " " + r1(b[1]) + " L" + r1(b[0] - 4.5) + " " + r1(b[1] - 8) + " L" + r1(b[0] - 0.8) + " " + r1(b[1] - 3.5) +
              " L" + r1(b[0]) + " " + r1(b[1] - 10) + " L" + r1(b[0] + 1.6) + " " + r1(b[1] - 3.5) + " L" + r1(b[0] + 4.6) + " " + r1(b[1] - 7.5) + " L" + r1(b[0] + 3) + " " + r1(b[1]) + ' Z" fill="#3f8a33" stroke="#2f6e28" stroke-width="0.6"/>';
+        // blades lean in the wind; the phase depends on position so the field ripples instead of moving as one
+        s += swayG(b[0], b[1], 5, 2.2 + ((u * 3 + v * 5) % 1.7), (u * 1.3 + v * 0.9) % 3, tuft);
       }
       if (rand() < 0.28) {
         const u = di + 0.15 + rand() * 0.7, v = dj + 0.15 + rand() * 0.7;
@@ -177,15 +191,18 @@
       s += vface([di + a, dj + a], [di + a, dj + b], [{ z0: zF, z1: HL, fill: "#554b5c" }], [(zF + HL) / 2]);
       // glowing rune
       s += decal(di, dj, zF,
+        '<g>' + anim("opacity", "1;0.5;1", 2.4, di * 0.7 + dj * 0.4) +
         '<circle cx="0.5" cy="0.5" r="0.27" fill="' + c.main + '" opacity="0.30"/>' +
         '<circle cx="0.5" cy="0.5" r="0.22" fill="none" stroke="' + c.glow + '" stroke-width="0.03" opacity="0.9"/>' +
-        '<path d="M0.5 0.3 L0.55 0.45 L0.7 0.5 L0.55 0.55 L0.5 0.7 L0.45 0.55 L0.3 0.5 L0.45 0.45 Z" fill="' + c.glow + '" opacity="0.75"/>');
+        '<path d="M0.5 0.3 L0.55 0.45 L0.7 0.5 L0.55 0.55 L0.5 0.7 L0.45 0.55 L0.3 0.5 L0.45 0.45 Z" fill="' + c.glow + '" opacity="0.75"/></g>');
       // spikes
       [[0.34, 0.4], [0.62, 0.36], [0.5, 0.56], [0.35, 0.66], [0.66, 0.64]].forEach(sp2 => {
         const bp = P(di + sp2[0], dj + sp2[1], zF), w = S * 0.04, hgt = S * 0.15;
         s += '<polygon points="' + pts([[bp[0] - w, bp[1]], [bp[0] + w, bp[1]], [bp[0], bp[1] - hgt]]) + '" fill="#d7dbe4" stroke="#4a4e5a" stroke-width="0.9" stroke-linejoin="round"/>' +
              '<polygon points="' + pts([[bp[0] + w * 0.1, bp[1]], [bp[0] + w, bp[1]], [bp[0], bp[1] - hgt]]) + '" fill="#9aa0ae"/>';
       });
+      // a previous victim at the bottom of the pit
+      s += skullShape(di + 0.27, dj + 0.3, zF, 0.8, owner === "top" ? -12 : 10);
       // redraw the near rim (south + east strips) so it hides the far part of the pit floor
       s += '<polygon points="' + sq(0, b, 1, 1, HL) + '" fill="' + topFill + '"/>';
       s += '<polygon points="' + sq(b, 0, 1, b, HL) + '" fill="' + topFill + '"/>';
@@ -215,7 +232,7 @@
         s += box(u0, v0, u0 + w, v0 + w, zT, zT + 0.58, "#cfc8b4", "#a59e8a", "#8b8472");
         s += box(u0 - 0.025, v0 - 0.025, u0 + w + 0.025, v0 + w + 0.025, zT + 0.58, zT + 0.64, "#e3dcc8", "#b3ac98", "#98917f");
         const t = P(u0 + w / 2, v0 + w / 2, zT + 0.78);
-        s += '<circle cx="' + r1(t[0]) + '" cy="' + r1(t[1]) + '" r="' + r1(S * 0.2) + '" fill="' + c.glow + '" opacity="0.28"/>' +
+        s += '<circle cx="' + r1(t[0]) + '" cy="' + r1(t[1]) + '" r="' + r1(S * 0.2) + '" fill="' + c.glow + '" opacity="0.28">' + anim("opacity", "0.18;0.5;0.18", 2.1 + ox, ox * 9) + '</circle>' +
              '<circle cx="' + r1(t[0]) + '" cy="' + r1(t[1]) + '" r="' + r1(S * 0.085) + '" fill="' + c.glow + '" stroke="' + c.dark + '" stroke-width="1.2"/>' +
              '<circle cx="' + r1(t[0] - S * 0.025) + '" cy="' + r1(t[1] - S * 0.03) + '" r="' + r1(S * 0.03) + '" fill="#fff" opacity="0.8"/>';
       });
@@ -243,12 +260,24 @@
       let ripples = "";
       for (let i = 0; i < 2; i++) {
         const rx = 0.2 + rand() * 0.55, ry = 0.3 + rand() * 0.5;
-        ripples += '<path d="M' + r1(rx) + " " + r1(ry) + " q0.07 -0.05 0.14 0 q0.07 0.05 0.14 0" + '" stroke="rgba(255,255,255,0.55)" stroke-width="0.022" fill="none" stroke-linecap="round"/>';
+        ripples += '<path d="M' + f2(rx) + " " + f2(ry) + " q0.07 -0.05 0.14 0 q0.07 0.05 0.14 0" + '" stroke="rgba(255,255,255,0.55)" stroke-width="0.022" fill="none" stroke-linecap="round"/>';
       }
       ripples += '<circle cx="' + r1(0.2 + rand() * 0.6) + '" cy="' + r1(0.2 + rand() * 0.6) + '" r="0.015" fill="#fff" opacity="0.8"/>';
-      s += decal(di, dj, HW, shadows + ripples);
-      if (landN) s += '<polyline points="' + pts([P(di, dj, HW), P(di + 1, dj, HW)]) + '" stroke="rgba(255,255,255,0.7)" stroke-width="2" fill="none" stroke-linecap="round"/>';
-      if (landW) s += '<polyline points="' + pts([P(di, dj, HW), P(di, dj + 1, HW)]) + '" stroke="rgba(255,255,255,0.6)" stroke-width="2" fill="none" stroke-linecap="round"/>';
+      // animation: ripples drift and fade, a soft shimmer pulses, bright glints slide across (all clipped to this cell)
+      const ph = rand() * 6, ph2 = rand() * 6;
+      let glints = "";
+      if (A) {
+        for (let g = 0; g < 2; g++) {
+          const gy = 0.2 + rand() * 0.6, gd = 3 + rand() * 3, gb = rand() * 6;
+          glints += '<ellipse cx="0.05" cy="' + f2(gy) + '" rx="0.11" ry="0.012" fill="#fff" opacity="0">' +
+            anim("cx", "0.02;0.98", gd, gb) + anim("opacity", "0;0.8;0", gd, gb) + "</ellipse>";
+        }
+      }
+      const shimmer = A ? '<rect width="1" height="1" fill="#fff" opacity="0">' + anim("opacity", "0;0.12;0", 3.2 + ph / 3, ph) + "</rect>" : "";
+      s += decal(di, dj, HW, '<g clip-path="url(#ctIsoCell)">' + shadows + shimmer +
+        driftG(0.1, 0.03, 4 + ph / 2, ph2, "<g>" + anim("opacity", "1;0.45;1", 3 + ph / 2, ph2) + ripples + "</g>") + glints + "</g>");
+      if (landN) s += '<polyline points="' + pts([P(di, dj, HW), P(di + 1, dj, HW)]) + '" stroke="rgba(255,255,255,0.7)" stroke-width="2" fill="none" stroke-linecap="round">' + anim("opacity", "1;0.45;1", 2.6, ph) + "</polyline>";
+      if (landW) s += '<polyline points="' + pts([P(di, dj, HW), P(di, dj + 1, HW)]) + '" stroke="rgba(255,255,255,0.6)" stroke-width="2" fill="none" stroke-linecap="round">' + anim("opacity", "1;0.45;1", 2.9, ph2) + "</polyline>";
       return s;
     }
 
@@ -271,15 +300,111 @@
       return s;
     }
 
+    // ------------------------------------------------------------ terrain relief, cracks, bones
+    // Open grass is lumpy: some cells sit higher, some lower. River banks, the causeway, traps and dens stay at the
+    // standard height so the wooden walls, pits and dais line up. Heights depend on the logical (x,y), so flipping the view keeps them.
+    function cellHeight(x, y) {
+      if (isRiver(x, y)) return HW;
+      if (isCauseway(x, y) || denOwner(x, y) || trapOwner(x, y)) return HL;
+      if (isRiver(x - 1, y) || isRiver(x + 1, y) || isRiver(x, y - 1) || isRiver(x, y + 1)) return HL;
+      const r = rng(o.seed * 777 + x * 29 + y * 53)();
+      return HL + (r < 0.25 ? -0.07 : r < 0.6 ? 0 : r < 0.85 ? 0.06 : 0.11);
+    }
+    function nearTrap(x, y) {
+      if (trapOwner(x, y) || denOwner(x, y)) return false;
+      for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) if (trapOwner(x + dx, y + dy)) return true;
+      return false;
+    }
+    function crackD(cr, u, v, ang, len, depth) {
+      let out = "M" + f2(u) + " " + f2(v), cu = u, cv = v, a = ang;
+      const n = 4;
+      for (let i = 0; i < n; i++) {
+        a += (cr() - 0.5) * 1.1;
+        cu += Math.cos(a) * len / n; cv += Math.sin(a) * len / n;
+        out += " L" + f2(cu) + " " + f2(cv);
+        if (depth > 0 && i > 0 && cr() < 0.45) out += " " + crackD(cr, cu, cv, a + (cr() < 0.5 ? 1 : -1) * (0.6 + cr() * 0.5), len * 0.5, depth - 1);
+      }
+      return out;
+    }
+    function crackInner(cr, strong) {
+      let s = "";
+      const count = strong ? 2 : 1;
+      for (let i = 0; i < count; i++) {
+        const d = crackD(cr, 0.2 + cr() * 0.6, 0.2 + cr() * 0.6, cr() * Math.PI * 2, 0.42 + cr() * 0.3, 1);
+        s += '<path d="' + d + '" transform="translate(0.012 0.016)" stroke="rgba(255,255,255,0.2)" stroke-width="0.014" fill="none" stroke-linecap="round" stroke-linejoin="round"/>' +
+             '<path d="' + d + '" stroke="rgba(28,36,16,0.6)" stroke-width="0.03" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+      }
+      return '<g clip-path="url(#ctIsoCell)">' + s + "</g>";
+    }
+    // a bone lying flat (cell units): shaft with a pair of knobs at each end
+    function boneInner(cx, cy, ang, len) {
+      const knob = (sx) => '<circle cx="' + f2(sx * len) + '" cy="-0.022" r="0.032"/><circle cx="' + f2(sx * len) + '" cy="0.022" r="0.032"/>';
+      return '<g transform="translate(' + f2(cx) + " " + f2(cy) + ") rotate(" + Math.round(ang) + ')" fill="#efe8d2" stroke="#7d7360" stroke-width="0.01">' +
+        '<path d="M' + f2(-len) + " 0 L" + f2(len) + ' 0" stroke-width="0.062" stroke-linecap="round"/>' +
+        '<path d="M' + f2(-len) + " 0 L" + f2(len) + ' 0" stroke="#efe8d2" stroke-width="0.044" stroke-linecap="round"/>' +
+        knob(-1) + knob(1) + "</g>";
+    }
+    function ribsInner(cx, cy, ang) {
+      let ribs = "";
+      for (let i = 0; i < 4; i++) {
+        const x = -0.105 + i * 0.07;
+        ribs += "M" + f2(x) + " 0 q0.02 -0.09 0.085 -0.105 M" + f2(x) + " 0 q0.02 0.09 0.085 0.105 ";
+      }
+      return '<g transform="translate(' + f2(cx) + " " + f2(cy) + ") rotate(" + Math.round(ang) + ')" fill="none" stroke-linecap="round">' +
+        '<path d="M-0.15 0 L0.18 0 ' + ribs + '" stroke="#7d7360" stroke-width="0.04"/>' +
+        '<path d="M-0.15 0 L0.18 0 ' + ribs + '" stroke="#efe8d2" stroke-width="0.024"/></g>';
+    }
+    // a skull standing upright on the ground (drawn in screen space like a small prop)
+    function skullShape(u, v, z, k, tilt) {
+      const b = P(u, v, z), sk = S * 0.085 * k, x = b[0], y = b[1];
+      let s = '<g transform="rotate(' + tilt + " " + r1(x) + " " + r1(y) + ')">';
+      s += '<ellipse cx="' + r1(x + sk * 0.2) + '" cy="' + r1(y) + '" rx="' + r1(sk * 1.05) + '" ry="' + r1(sk * 0.4) + '" fill="rgba(0,0,0,0.3)"/>';
+      s += '<path d="M' + r1(x - sk * 0.55) + " " + r1(y - sk * 0.55) + " L" + r1(x - sk * 0.5) + " " + r1(y - sk * 0.05) + " L" + r1(x + sk * 0.5) + " " + r1(y - sk * 0.05) + " L" + r1(x + sk * 0.55) + " " + r1(y - sk * 0.55) + ' Z" fill="#d9d1b8" stroke="#6f6650" stroke-width="1.1" stroke-linejoin="round"/>';
+      s += '<circle cx="' + r1(x) + '" cy="' + r1(y - sk * 1.05) + '" r="' + r1(sk) + '" fill="#efe8d2" stroke="#6f6650" stroke-width="1.2"/>';
+      s += '<ellipse cx="' + r1(x - sk * 0.38) + '" cy="' + r1(y - sk * 1.0) + '" rx="' + r1(sk * 0.28) + '" ry="' + r1(sk * 0.34) + '" fill="#2a2118"/>' +
+           '<ellipse cx="' + r1(x + sk * 0.38) + '" cy="' + r1(y - sk * 1.0) + '" rx="' + r1(sk * 0.28) + '" ry="' + r1(sk * 0.34) + '" fill="#2a2118"/>';
+      s += '<path d="M' + r1(x) + " " + r1(y - sk * 0.66) + " l" + r1(-sk * 0.11) + " " + r1(sk * 0.22) + " h" + r1(sk * 0.22) + ' z" fill="#2a2118"/>';
+      for (let i = -2; i <= 2; i++) s += '<line x1="' + r1(x + i * sk * 0.2) + '" y1="' + r1(y - sk * 0.3) + '" x2="' + r1(x + i * sk * 0.2) + '" y2="' + r1(y - sk * 0.08) + '" stroke="#6f6650" stroke-width="0.8"/>';
+      s += '<circle cx="' + r1(x - sk * 0.4) + '" cy="' + r1(y - sk * 1.5) + '" r="' + r1(sk * 0.2) + '" fill="#fff" opacity="0.5"/></g>';
+      return s;
+    }
+    function rockShape(u, v, z, k) {
+      const b = P(u, v, z), w = S * 0.11 * k, h = S * 0.09 * k, x = b[0], y = b[1];
+      return '<ellipse cx="' + r1(x + w * 0.2) + '" cy="' + r1(y + 1) + '" rx="' + r1(w * 1.1) + '" ry="' + r1(h * 0.4) + '" fill="rgba(0,0,0,0.25)"/>' +
+        '<path d="M' + r1(x - w) + " " + r1(y) + " L" + r1(x - w * 0.8) + " " + r1(y - h * 0.8) + " L" + r1(x - w * 0.1) + " " + r1(y - h * 1.3) + " L" + r1(x + w * 0.7) + " " + r1(y - h * 0.9) + " L" + r1(x + w) + " " + r1(y) + ' Z" fill="#9a9a96" stroke="#4d4d4a" stroke-width="1" stroke-linejoin="round"/>' +
+        '<path d="M' + r1(x - w * 0.1) + " " + r1(y - h * 1.3) + " L" + r1(x + w * 0.7) + " " + r1(y - h * 0.9) + " L" + r1(x + w) + " " + r1(y) + " L" + r1(x + w * 0.1) + " " + r1(y) + ' Z" fill="#7b7b77"/>';
+    }
+    // everything extra on a plain cell: cracks, loose rocks, and bones when it is next to a trap
+    function terrainExtras(di, dj, x, y, h) {
+      const cr = rng(o.seed * 4001 + x * 47 + y * 89);
+      const near = nearTrap(x, y);
+      let s = "";
+      if (near || cr() < 0.45) s += decal(di, dj, h, crackInner(cr, near));
+      const byWater = isRiver(x - 1, y) || isRiver(x + 1, y) || isRiver(x, y - 1) || isRiver(x, y + 1);
+      if (!near && !byWater && cr() < 0.22) s += rockShape(di + (cr() < 0.5 ? 0.2 : 0.8), dj + (cr() < 0.5 ? 0.22 : 0.8), h, 0.8 + cr() * 0.6);
+      if (near) {
+        const corner = () => [(cr() < 0.5 ? 0.18 + cr() * 0.12 : 0.7 + cr() * 0.12), (cr() < 0.5 ? 0.2 + cr() * 0.12 : 0.7 + cr() * 0.12)];
+        let flat = "";
+        const nb = 1 + (cr() < 0.5 ? 1 : 0);
+        for (let i = 0; i < nb; i++) { const c = corner(); flat += boneInner(c[0], c[1], cr() * 180, 0.1 + cr() * 0.06); }
+        if (cr() < 0.25) { const c = corner(); flat += ribsInner(c[0], c[1], cr() * 180); }
+        s += decal(di, dj, h, flat);
+        if (cr() < 0.55) { const c = corner(); s += skullShape(di + c[0], dj + c[1], h, 0.9 + cr() * 0.3, Math.round((cr() - 0.5) * 30)); }
+      }
+      return s;
+    }
+
     function drawCell(di, dj) {
       const [x, y] = toLogical(di, dj);
       const rand = rng(o.seed * 1000 + x * 13 + y * 101);
       let s = "";
       const river = isRiver(x, y);
+      const h = cellHeight(x, y);   // top of this cell
       cells[x + "," + y] = {
         display: [di, dj],
-        top: [P(di, dj, river ? HW : HL), P(di + 1, dj, river ? HW : HL), P(di + 1, dj + 1, river ? HW : HL), P(di, dj + 1, river ? HW : HL)],
-        center: P(di + 0.5, dj + 0.5, river ? HW : HL)
+        top: [P(di, dj, h), P(di + 1, dj, h), P(di + 1, dj + 1, h), P(di, dj + 1, h)],
+        center: P(di + 0.5, dj + 0.5, h),
+        height: h
       };
       if (river) return waterCell(di, dj, x, y, rand);
 
@@ -289,33 +414,35 @@
       const wallKind = isCauseway(x, y) ? "wall" : null;
       const northWater = dj > 0 && isRiver(...toLogical(di, dj - 1));
       const westWater = di > 0 && isRiver(...toLogical(di - 1, dj));
-      s += southWater ? woodFace([di, dj + 1], [di + 1, dj + 1], HL, 0, 1) :
-        vface([di, dj + 1], [di + 1, dj + 1], wallBands(HL, southEdge ? ZB : 0, wallKind ? "wall" : "dirt", 1, southEdge),
-          wallKind ? [HL * 0.55] : (southEdge ? [0, ZB / 2] : []));
-      s += eastWater ? woodFace([di + 1, dj], [di + 1, dj + 1], HL, 0, 0.78) :
-        vface([di + 1, dj], [di + 1, dj + 1], wallBands(HL, eastEdge ? ZB : 0, wallKind ? "wall" : "dirt", 0.78, eastEdge),
-          wallKind ? [HL * 0.55] : (eastEdge ? [0, ZB / 2] : []));
+      // dirt walls get a few strata lines so the height differences between cells read as layered earth
+      const strata = southEdge || eastEdge ? null : [h * 0.38, h * 0.7];
+      s += southWater ? woodFace([di, dj + 1], [di + 1, dj + 1], h, 0, 1) :
+        vface([di, dj + 1], [di + 1, dj + 1], wallBands(h, southEdge ? ZB : 0, wallKind ? "wall" : "dirt", 1, southEdge),
+          wallKind ? [h * 0.55] : (southEdge ? [0, ZB / 2] : strata));
+      s += eastWater ? woodFace([di + 1, dj], [di + 1, dj + 1], h, 0, 0.78) :
+        vface([di + 1, dj], [di + 1, dj + 1], wallBands(h, eastEdge ? ZB : 0, wallKind ? "wall" : "dirt", 0.78, eastEdge),
+          wallKind ? [h * 0.55] : (eastEdge ? [0, ZB / 2] : strata));
 
       const trap = trapOwner(x, y), den = denOwner(x, y), par = (x + y) % 2;
       let topFill;
       if (den) topFill = "#bdb6a2";
       else if (trap) topFill = par ? "#9a8a6c" : "#8f7f62";
       else if (isCauseway(x, y)) topFill = par ? "#bdb8aa" : "#b0ab9c";
-      else topFill = par ? "#80cc5b" : "#74c052";
-      s += '<polygon points="' + pts([P(di, dj, HL), P(di + 1, dj, HL), P(di + 1, dj + 1, HL), P(di, dj + 1, HL)]) + '" fill="' + topFill + '"/>';
+      else topFill = shade(par ? "#80cc5b" : "#74c052", 1 + (h - HL) * 1.5);   // higher ground is lighter, hollows are darker
+      s += '<polygon points="' + pts([P(di, dj, h), P(di + 1, dj, h), P(di + 1, dj + 1, h), P(di, dj + 1, h)]) + '" fill="' + topFill + '"/>';
       // bevel: light on the back edges, dark on the front edges
-      s += '<polyline points="' + pts([P(di, dj + 1, HL), P(di, dj, HL), P(di + 1, dj, HL)]) + '" stroke="rgba(255,255,255,0.32)" stroke-width="1.5" fill="none" stroke-linejoin="round"/>';
-      s += '<polyline points="' + pts([P(di, dj + 1, HL), P(di + 1, dj + 1, HL), P(di + 1, dj, HL)]) + '" stroke="rgba(0,0,0,0.16)" stroke-width="1" fill="none" stroke-linejoin="round"/>';
+      s += '<polyline points="' + pts([P(di, dj + 1, h), P(di, dj, h), P(di + 1, dj, h)]) + '" stroke="rgba(255,255,255,0.32)" stroke-width="1.5" fill="none" stroke-linejoin="round"/>';
+      s += '<polyline points="' + pts([P(di, dj + 1, h), P(di + 1, dj + 1, h), P(di + 1, dj, h)]) + '" stroke="rgba(0,0,0,0.16)" stroke-width="1" fill="none" stroke-linejoin="round"/>';
 
       if (den) s += denStructure(di, dj, den);
       else if (trap) s += trapTerrain(di, dj, trap, topFill);
       else if (isCauseway(x, y)) s += causewayDecal(di, dj, rand);
-      else s += grassDecor(di, dj, HL, rand);
+      else { s += grassDecor(di, dj, h, rand); s += terrainExtras(di, dj, x, y, h); }
 
       if (northWater || westWater || southWater || eastWater) s += bankTrim(di, dj, northWater, westWater, southWater, eastWater);
 
       const p = pieceAt[x + "," + y];
-      if (p) s += pieceShape(p, di, dj, den ? HL + DAIS : HL);
+      if (p) s += pieceShape(p, di, dj, den ? HL + DAIS : h);
       return s;
     }
 
@@ -368,7 +495,7 @@
         const sx = segs[i][0], sy = segs[i][1], side = i % 2 ? 1 : -1;
         g += '<path d="M' + r1(sx) + " " + r1(sy) + " q" + r1(side * S * 0.1) + " " + r1(-S * 0.05) + " " + r1(side * S * 0.16) + " " + r1(S * 0.03) + " q" + r1(-side * S * 0.08) + " " + r1(S * 0.07) + " " + r1(-side * S * 0.16) + ' ' + r1(-S * 0.03) + ' Z" fill="#4fbd57" stroke="#245c2c" stroke-width="1"/>';
       }
-      return g;
+      return swayG(a[0], a[1], 2.5, 3.5 + (sway % 2), sway, g);
     }
     const vr = rng(o.seed * 19 + 3);
     let vines = "";
@@ -391,7 +518,7 @@
       // light rays
       for (let i = 0; i < 6; i++) {
         const cx0 = vx + vw * (0.15 + i * 0.14), w = vw * 0.05;
-        bg += '<polygon points="' + pts([[cx0, vy], [cx0 + w, vy], [cx0 + w * 3 + vw * 0.08, vy + vh], [cx0 - w * 2 + vw * 0.08, vy + vh]]) + '" fill="#fff" opacity="0.06"/>';
+        bg += '<polygon points="' + pts([[cx0, vy], [cx0 + w, vy], [cx0 + w * 3 + vw * 0.08, vy + vh], [cx0 - w * 2 + vw * 0.08, vy + vh]]) + '" fill="#fff" opacity="0.06">' + anim("opacity", "0.03;0.1;0.03", 5 + i * 1.3, i * 1.7) + "</polygon>";
       }
       // distant jungle hills
       bg += '<path d="M' + r1(vx) + " " + r1(vy + vh * 0.55) + " Q" + r1(vx + vw * 0.2) + " " + r1(vy + vh * 0.3) + " " + r1(vx + vw * 0.4) + " " + r1(vy + vh * 0.5) +
@@ -409,22 +536,48 @@
       const [vx, vy, vw, vh] = vb;
       const leaf = (tx, ty, rot, sc, flipX) =>
         '<g transform="translate(' + r1(tx) + "," + r1(ty) + ") rotate(" + rot + ") scale(" + (flipX ? -sc : sc) + "," + sc + ')">' +
-        '<path d="M0 0 C16 -44 62 -64 106 -40 C84 -4 36 14 0 0 Z" fill="url(#ctIsoLeaf)" stroke="#1b4a2a" stroke-width="3.5" stroke-linejoin="round"/>' +
-        '<path d="M4 -2 Q50 -26 100 -38" fill="none" stroke="#1b4a2a" stroke-width="2.5" opacity="0.55"/></g>';
+        swayG(0, 0, 2.5, 4.5 + (Math.abs(tx) % 3), Math.abs(tx) % 5,
+          '<path d="M0 0 C16 -44 62 -64 106 -40 C84 -4 36 14 0 0 Z" fill="url(#ctIsoLeaf)" stroke="#1b4a2a" stroke-width="3.5" stroke-linejoin="round"/>' +
+          '<path d="M4 -2 Q50 -26 100 -38" fill="none" stroke="#1b4a2a" stroke-width="2.5" opacity="0.55"/>') + "</g>";
       const k = S / 64;
       leaves += leaf(vx - 6, vy + vh + 6, -32, 1.5 * k, false) + leaf(vx + 26 * k, vy + vh + 10, -72, 1.1 * k, false) + leaf(vx + 80 * k, vy + vh + 8, -12, 0.95 * k, false);
       leaves += leaf(vx + vw + 6, vy + vh + 6, -148, 1.5 * k, false) + leaf(vx + vw - 26 * k, vy + vh + 10, -108, 1.1 * k, false) + leaf(vx + vw - 80 * k, vy + vh + 8, -168, 0.95 * k, false);
       leaves += leaf(vx - 4, vy - 2, 40, 1.2 * k, false) + leaf(vx + vw + 4, vy - 2, 140, 1.2 * k, false);
     }
 
+    // ------------------------------------------------------------- ambience: fireflies over the board, leaves drifting down
+    let motes = "";
+    if (A && o.background) {
+      const mr = rng(o.seed * 53 + 11);
+      for (let i = 0; i < 16; i++) {
+        const pos = () => P(mr() * COLS, mr() * ROWS, HL + 0.25 + mr() * 0.8);
+        const a = pos(), b = pos(), c = pos();
+        const dur = 9 + mr() * 8, ph = mr() * dur, tw = 1.6 + mr() * 1.6;
+        motes += '<g opacity="0.9"><animateTransform attributeName="transform" type="translate" values="' +
+          [a, b, c, a].map(p => r1(p[0]) + " " + r1(p[1])).join(";") + '" dur="' + f2(dur) + 's" begin="-' + f2(ph) + 's" repeatCount="indefinite"/>' +
+          anim("opacity", "0.15;1;0.15", tw, ph) +
+          '<circle r="' + r1(S * 0.07) + '" fill="#fff3a0" opacity="0.25"/><circle r="' + r1(S * 0.022) + '" fill="#fffbd0"/></g>';
+      }
+      const [vx, vy, vw, vh] = vb;
+      for (let i = 0; i < 6; i++) {
+        const x0 = vx + vw * (0.1 + mr() * 0.8), dur = 14 + mr() * 10, ph = mr() * dur, sw = (mr() - 0.5) * vw * 0.2, k = S / 64 * (0.8 + mr() * 0.6);
+        motes += '<g opacity="0"><animateTransform attributeName="transform" type="translate" values="' + r1(x0) + " " + r1(vy) + ";" + r1(x0 + sw) + " " + r1(vy + vh * 0.5) + ";" + r1(x0) + " " + r1(vy + vh) +
+          '" keyTimes="0;0.5;1" dur="' + f2(dur) + 's" begin="-' + f2(ph) + 's" repeatCount="indefinite"/>' +
+          '<animate attributeName="opacity" values="0;0.9;0.9;0" keyTimes="0;0.1;0.9;1" dur="' + f2(dur) + 's" begin="-' + f2(ph) + 's" repeatCount="indefinite"/>' +
+          '<g><animateTransform attributeName="transform" type="rotate" values="-50;60;-50" dur="' + f2(2.5 + mr() * 2) + 's" repeatCount="indefinite"/>' +
+          '<path d="M0 0 C4 -7 13 -7 18 0 C13 7 4 7 0 0 Z" transform="scale(' + f2(k) + ')" fill="' + (i % 2 ? "#a6d95c" : "#e0c14a") + '" stroke="#2b6a2c" stroke-width="1"/></g></g>';
+      }
+    }
+
     const defs =
       '<defs>' +
+      '<clipPath id="ctIsoCell"><rect x="0" y="0" width="1" height="1"/></clipPath>' +
       '<linearGradient id="ctIsoSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#bff3ea"/><stop offset="55%" stop-color="#5fc9c0"/><stop offset="100%" stop-color="#1d7f84"/></linearGradient>' +
       '<linearGradient id="ctIsoLeaf" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#7be07a"/><stop offset="100%" stop-color="#2b9a4b"/></linearGradient>' +
       '</defs>';
 
     const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + vb.map(r1).join(" ") + '" width="' + r1(vb[2]) + '" height="' + r1(vb[3]) + '">' +
-      defs + bg + cliff + board + vines + leaves + "</svg>";
+      defs + bg + cliff + board + vines + motes + leaves + "</svg>";
 
     return { svg: svg, viewBox: vb, cells: cells, project: P, toDisplay: toDisplay, toLogical: toLogical };
   }
