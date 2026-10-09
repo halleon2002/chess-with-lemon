@@ -96,6 +96,47 @@
       return bands;
     }
 
+    // wooden retaining wall along a river bank: vertical planks, seams and a rope strap
+    function woodFace(p0, p1, top, bottom, k) {
+      const lerp = t => [p0[0] + (p1[0] - p0[0]) * t, p0[1] + (p1[1] - p0[1]) * t];
+      const zt = top - 0.05, N = 6;
+      let s = vface(p0, p1, [
+        { z0: zt, z1: top, fill: shade("#4b9a37", k) },
+        { z0: bottom, z1: zt, fill: shade("#a9733f", k) }
+      ]);
+      for (let i = 0; i < N; i++) {
+        if (i % 2 === 0) continue;
+        const a = lerp(i / N), b = lerp((i + 1) / N);
+        s += '<polygon points="' + pts([P(a[0], a[1], zt), P(b[0], b[1], zt), P(b[0], b[1], bottom), P(a[0], a[1], bottom)]) + '" fill="' + shade("#93602f", k) + '"/>';
+      }
+      for (let i = 1; i < N; i++) {
+        const a = lerp(i / N);
+        s += '<polyline points="' + pts([P(a[0], a[1], zt), P(a[0], a[1], bottom)]) + '" stroke="rgba(55,28,10,0.5)" stroke-width="1" fill="none"/>';
+      }
+      s += '<polyline points="' + pts([P(p0[0], p0[1], top * 0.5), P(p1[0], p1[1], top * 0.5)]) + '" stroke="rgba(45,22,8,0.55)" stroke-width="2" fill="none"/>';
+      return s;
+    }
+    // log rail + posts along the top of land edges that touch the river
+    function bankTrim(di, dj, nW, wW, sW, eW) {
+      const LOG = (u0, v0, u1, v1) => box(u0, v0, u1, v1, HL, HL + 0.045, "#c99557", "#a9733f", "#8a5a30");
+      const done = {};
+      const POST = (u, v) => {
+        const key = r1(u) + "," + r1(v);
+        if (done[key]) return "";
+        done[key] = 1;
+        return box(u, v, u + 0.1, v + 0.1, HL, HL + 0.17, "#b07a45", "#8a5a30", "#6f4624") +
+               box(u - 0.015, v - 0.015, u + 0.115, v + 0.115, HL + 0.17, HL + 0.2, "#dcaa6a", "#b98750", "#9c703f");
+      };
+      let s = "";
+      if (nW) s += LOG(di, dj, di + 1, dj + 0.09);
+      if (wW) s += LOG(di, dj, di + 0.09, dj + 1);
+      if (nW) s += POST(di, dj) + POST(di + 0.9, dj);
+      if (wW) s += POST(di, dj) + POST(di, dj + 0.9);
+      if (sW) s += LOG(di, dj + 0.91, di + 1, dj + 1) + POST(di, dj + 0.9) + POST(di + 0.9, dj + 0.9);
+      if (eW) s += LOG(di + 0.91, dj, di + 1, dj + 1) + POST(di + 0.9, dj) + POST(di + 0.9, dj + 0.9);
+      return s;
+    }
+
     // ---------------------------------------------------------------- cells
     const pieceAt = {};
     (o.pieces || []).forEach(p => { pieceAt[p.x + "," + p.y] = p; });
@@ -119,18 +160,44 @@
       return s;
     }
 
-    function trapDecal(di, dj, owner) {
-      const c = OWNER[owner], teeth = 12;
-      let ring = [];
-      for (let i = 0; i < teeth * 2; i++) {
-        const a = Math.PI * i / teeth, r = i % 2 ? 0.28 : 0.37;
-        ring.push((0.5 + r * Math.cos(a)).toFixed(3) + "," + (0.5 + r * Math.sin(a)).toFixed(3));
-      }
-      return decal(di, dj, HL,
-        '<circle cx="0.5" cy="0.5" r="0.42" fill="#2a2433"/>' +
-        '<polygon points="' + ring.join(" ") + '" fill="' + c.main + '" stroke="' + c.dark + '" stroke-width="0.015"/>' +
-        '<circle cx="0.5" cy="0.5" r="0.21" fill="#1d1826"/>' +
-        '<path d="M0.36 0.36 L0.64 0.64 M0.64 0.36 L0.36 0.64" stroke="' + c.glow + '" stroke-width="0.04" stroke-linecap="round"/>');
+    // a trap is a real pit sunk into a stone-paved tile, with spikes and a glowing owner rune at the bottom
+    function trapTerrain(di, dj, owner, topFill) {
+      const c = OWNER[owner];
+      const a = 0.16, b = 0.84, zF = HL - 0.11;
+      const sq = (u0, v0, u1, v1, z) => pts([P(di + u0, dj + v0, z), P(di + u1, dj + v0, z), P(di + u1, dj + v1, z), P(di + u0, dj + v1, z)]);
+      let s = "";
+      // paving cracks on the rim
+      s += decal(di, dj, HL,
+        '<path d="M0.04 0.1 L0.1 0.04 M0.9 0.04 L0.96 0.12 M0.05 0.92 L0.12 0.97 M0.88 0.95 L0.95 0.88" stroke="rgba(40,30,20,0.45)" stroke-width="0.018" fill="none" stroke-linecap="round"/>' +
+        '<circle cx="0.08" cy="0.5" r="0.03" fill="#6e5f45" opacity="0.7"/><circle cx="0.92" cy="0.5" r="0.03" fill="#6e5f45" opacity="0.7"/>');
+      // pit floor
+      s += '<polygon points="' + sq(a, a, b, b, zF) + '" fill="#2a2030"/>';
+      // inner walls that face the camera (north and west sides of the pit)
+      s += vface([di + a, dj + a], [di + b, dj + a], [{ z0: zF, z1: HL, fill: "#6d6272" }], [(zF + HL) / 2]);
+      s += vface([di + a, dj + a], [di + a, dj + b], [{ z0: zF, z1: HL, fill: "#554b5c" }], [(zF + HL) / 2]);
+      // glowing rune
+      s += decal(di, dj, zF,
+        '<circle cx="0.5" cy="0.5" r="0.27" fill="' + c.main + '" opacity="0.30"/>' +
+        '<circle cx="0.5" cy="0.5" r="0.22" fill="none" stroke="' + c.glow + '" stroke-width="0.03" opacity="0.9"/>' +
+        '<path d="M0.5 0.3 L0.55 0.45 L0.7 0.5 L0.55 0.55 L0.5 0.7 L0.45 0.55 L0.3 0.5 L0.45 0.45 Z" fill="' + c.glow + '" opacity="0.75"/>');
+      // spikes
+      [[0.34, 0.4], [0.62, 0.36], [0.5, 0.56], [0.35, 0.66], [0.66, 0.64]].forEach(sp2 => {
+        const bp = P(di + sp2[0], dj + sp2[1], zF), w = S * 0.04, hgt = S * 0.15;
+        s += '<polygon points="' + pts([[bp[0] - w, bp[1]], [bp[0] + w, bp[1]], [bp[0], bp[1] - hgt]]) + '" fill="#d7dbe4" stroke="#4a4e5a" stroke-width="0.9" stroke-linejoin="round"/>' +
+             '<polygon points="' + pts([[bp[0] + w * 0.1, bp[1]], [bp[0] + w, bp[1]], [bp[0], bp[1] - hgt]]) + '" fill="#9aa0ae"/>';
+      });
+      // redraw the near rim (south + east strips) so it hides the far part of the pit floor
+      s += '<polygon points="' + sq(0, b, 1, 1, HL) + '" fill="' + topFill + '"/>';
+      s += '<polygon points="' + sq(b, 0, 1, b, HL) + '" fill="' + topFill + '"/>';
+      // lip highlight around the opening
+      s += '<polyline points="' + pts([P(di + a, dj + b, HL), P(di + b, dj + b, HL), P(di + b, dj + a, HL)]) + '" stroke="rgba(255,255,255,0.28)" stroke-width="1.4" fill="none" stroke-linejoin="round"/>';
+      s += '<polyline points="' + pts([P(di + a, dj + b, HL), P(di + a, dj + a, HL), P(di + b, dj + a, HL)]) + '" stroke="rgba(0,0,0,0.35)" stroke-width="1.2" fill="none" stroke-linejoin="round"/>';
+      // mossy corner stones
+      [[0.02, 0.02], [0.84, 0.02], [0.02, 0.84], [0.84, 0.84]].forEach(cn => {
+        s += box(di + cn[0], dj + cn[1], di + cn[0] + 0.14, dj + cn[1] + 0.14, HL, HL + 0.05, "#a39a86", "#7f7765", "#6a6354");
+        s += decal(di + cn[0], dj + cn[1], HL + 0.05, '<circle cx="0.05" cy="0.05" r="0.05" fill="#4f9a3b" opacity="0.7"/>');
+      });
+      return s;
     }
 
     function denStructure(di, dj, owner) {
@@ -220,15 +287,19 @@
       const eastWater = di + 1 < COLS && isRiver(...toLogical(di + 1, dj));
       const southEdge = dj === ROWS - 1, eastEdge = di === COLS - 1;
       const wallKind = isCauseway(x, y) ? "wall" : null;
-      s += vface([di, dj + 1], [di + 1, dj + 1], wallBands(HL, southEdge ? ZB : 0, southWater || wallKind ? "wall" : "dirt", 1, southEdge),
-        southWater || wallKind ? [HL * 0.55] : (southEdge ? [0, ZB / 2] : []));
-      s += vface([di + 1, dj], [di + 1, dj + 1], wallBands(HL, eastEdge ? ZB : 0, eastWater || wallKind ? "wall" : "dirt", 0.78, eastEdge),
-        eastWater || wallKind ? [HL * 0.55] : (eastEdge ? [0, ZB / 2] : []));
+      const northWater = dj > 0 && isRiver(...toLogical(di, dj - 1));
+      const westWater = di > 0 && isRiver(...toLogical(di - 1, dj));
+      s += southWater ? woodFace([di, dj + 1], [di + 1, dj + 1], HL, 0, 1) :
+        vface([di, dj + 1], [di + 1, dj + 1], wallBands(HL, southEdge ? ZB : 0, wallKind ? "wall" : "dirt", 1, southEdge),
+          wallKind ? [HL * 0.55] : (southEdge ? [0, ZB / 2] : []));
+      s += eastWater ? woodFace([di + 1, dj], [di + 1, dj + 1], HL, 0, 0.78) :
+        vface([di + 1, dj], [di + 1, dj + 1], wallBands(HL, eastEdge ? ZB : 0, wallKind ? "wall" : "dirt", 0.78, eastEdge),
+          wallKind ? [HL * 0.55] : (eastEdge ? [0, ZB / 2] : []));
 
       const trap = trapOwner(x, y), den = denOwner(x, y), par = (x + y) % 2;
       let topFill;
       if (den) topFill = "#bdb6a2";
-      else if (trap) topFill = par ? "#7b7787" : "#726e80";
+      else if (trap) topFill = par ? "#9a8a6c" : "#8f7f62";
       else if (isCauseway(x, y)) topFill = par ? "#bdb8aa" : "#b0ab9c";
       else topFill = par ? "#80cc5b" : "#74c052";
       s += '<polygon points="' + pts([P(di, dj, HL), P(di + 1, dj, HL), P(di + 1, dj + 1, HL), P(di, dj + 1, HL)]) + '" fill="' + topFill + '"/>';
@@ -237,9 +308,11 @@
       s += '<polyline points="' + pts([P(di, dj + 1, HL), P(di + 1, dj + 1, HL), P(di + 1, dj, HL)]) + '" stroke="rgba(0,0,0,0.16)" stroke-width="1" fill="none" stroke-linejoin="round"/>';
 
       if (den) s += denStructure(di, dj, den);
-      else if (trap) s += trapDecal(di, dj, trap);
+      else if (trap) s += trapTerrain(di, dj, trap, topFill);
       else if (isCauseway(x, y)) s += causewayDecal(di, dj, rand);
       else s += grassDecor(di, dj, HL, rand);
+
+      if (northWater || westWater || southWater || eastWater) s += bankTrim(di, dj, northWater, westWater, southWater, eastWater);
 
       const p = pieceAt[x + "," + y];
       if (p) s += pieceShape(p, di, dj, den ? HL + DAIS : HL);
