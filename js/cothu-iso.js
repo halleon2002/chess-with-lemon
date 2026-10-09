@@ -229,31 +229,28 @@
     function denStructure(di, dj, owner) {
       const c = OWNER[owner];
       const z1 = HL + 0.09, zT = HL + DAIS;
-      // wide plinth, then a smaller jade tier on top, then two steps at the front
+      // the den on the viewer's side (bottom of the screen) must not have steps leading off the board edge,
+      // so its steps face the board (away from the camera); the far den keeps them on the camera-facing side
+      const near = dj === ROWS - 1;
+      const tv0 = near ? 0.16 : 0.12, tv1 = near ? 0.88 : 0.84, cy = (tv0 + tv1) / 2;
       let s = box(di + 0.03, dj + 0.03, di + 0.97, dj + 0.97, HL, z1, JADE.base, JADE.baseS, JADE.baseE);
       s += jadeSheen(di + 0.03, dj + 0.03, di + 0.97, dj + 0.97, HL, z1);
-      s += box(di + 0.12, dj + 0.12, di + 0.88, dj + 0.84, z1, zT, JADE.top, JADE.south, JADE.east);
-      s += jadeSheen(di + 0.12, dj + 0.12, di + 0.88, dj + 0.84, z1, zT);
-      s += box(di + 0.3, dj + 0.84, di + 0.7, dj + 0.9, z1, z1 + 0.09, JADE.top, JADE.south, JADE.east);
-      s += box(di + 0.3, dj + 0.9, di + 0.7, dj + 0.97, z1, z1 + 0.045, JADE.top, JADE.south, JADE.east);
+      if (near) {
+        s += box(di + 0.3, dj + 0.03, di + 0.7, dj + 0.09, z1, z1 + 0.045, JADE.top, JADE.south, JADE.east);
+        s += box(di + 0.3, dj + 0.09, di + 0.7, dj + 0.16, z1, z1 + 0.09, JADE.top, JADE.south, JADE.east);
+      }
+      s += box(di + 0.12, dj + tv0, di + 0.88, dj + tv1, z1, zT, JADE.top, JADE.south, JADE.east);
+      s += jadeSheen(di + 0.12, dj + tv0, di + 0.88, dj + tv1, z1, zT);
+      if (!near) {
+        s += box(di + 0.3, dj + 0.84, di + 0.7, dj + 0.9, z1, z1 + 0.09, JADE.top, JADE.south, JADE.east);
+        s += box(di + 0.3, dj + 0.9, di + 0.7, dj + 0.97, z1, z1 + 0.045, JADE.top, JADE.south, JADE.east);
+      }
       // owner-coloured seal on the top
       s += decal(di, dj, zT,
-        '<circle cx="0.5" cy="0.48" r="0.3" fill="' + c.main + '" opacity="0.28"/>' +
-        '<circle cx="0.5" cy="0.48" r="0.3" fill="none" stroke="' + c.glow + '" stroke-width="0.04"/>' +
-        '<circle cx="0.5" cy="0.48" r="0.2" fill="none" stroke="' + JADE.gold + '" stroke-width="0.02"/>' +
-        '<path d="M0.5 0.2 L0.57 0.41 L0.78 0.48 L0.57 0.55 L0.5 0.76 L0.43 0.55 L0.22 0.48 L0.43 0.41 Z" fill="' + c.glow + '" opacity="0.8"/>');
-      // two carved jade pillars at the back corners (a piece in the den is never hidden behind them)
-      [0.14, 0.72].forEach(ox => {
-        const u0 = di + ox, v0 = dj + 0.14, w = 0.14, ph = 0.55;
-        s += box(u0, v0, u0 + w, v0 + w, zT, zT + ph, JADE.top, JADE.south, JADE.east);
-        s += vface([u0, v0 + w], [u0 + w, v0 + w], [], [zT + 0.16, zT + 0.3]);
-        s += '<polyline points="' + pts([P(u0, v0 + w, zT + 0.43), P(u0 + w, v0 + w, zT + 0.43), P(u0 + w, v0, zT + 0.43)]) + '" stroke="' + JADE.gold + '" stroke-width="1.4" fill="none"/>';
-        s += box(u0 - 0.025, v0 - 0.025, u0 + w + 0.025, v0 + w + 0.025, zT + ph, zT + ph + 0.06, "#f6dc82", "#cfae4a", "#a98b36");
-        const t = P(u0 + w / 2, v0 + w / 2, zT + ph + 0.22);
-        s += '<circle cx="' + r1(t[0]) + '" cy="' + r1(t[1]) + '" r="' + r1(S * 0.2) + '" fill="' + c.glow + '" opacity="0.28">' + anim("opacity", "0.18;0.5;0.18", 2.1 + ox, ox * 9) + '</circle>' +
-             '<circle cx="' + r1(t[0]) + '" cy="' + r1(t[1]) + '" r="' + r1(S * 0.085) + '" fill="' + c.glow + '" stroke="' + c.dark + '" stroke-width="1.2"/>' +
-             '<circle cx="' + r1(t[0] - S * 0.025) + '" cy="' + r1(t[1] - S * 0.03) + '" r="' + r1(S * 0.03) + '" fill="#fff" opacity="0.8"/>';
-      });
+        '<circle cx="0.5" cy="' + cy + '" r="0.3" fill="' + c.main + '" opacity="0.28"/>' +
+        '<circle cx="0.5" cy="' + cy + '" r="0.3" fill="none" stroke="' + c.glow + '" stroke-width="0.04"/>' +
+        '<circle cx="0.5" cy="' + cy + '" r="0.2" fill="none" stroke="' + JADE.gold + '" stroke-width="0.02"/>' +
+        '<path d="M0.5 ' + f2(cy - 0.28) + ' L0.57 ' + f2(cy - 0.07) + ' L0.78 ' + cy + ' L0.57 ' + f2(cy + 0.07) + ' L0.5 ' + f2(cy + 0.28) + ' L0.43 ' + f2(cy + 0.07) + ' L0.22 ' + cy + ' L0.43 ' + f2(cy - 0.07) + ' Z" fill="' + c.glow + '" opacity="0.8"/>');
       // banner on a pole at the back centre: always faces the viewer, so it is drawn in screen space and waves
       const pb = P(di + 0.5, dj + 0.22, zT), pt = P(di + 0.5, dj + 0.22, zT + 1.05);
       const k = S / 64, fw = 30 * k, fh = 19 * k, fx = pt[0] + 1.2, fy = pt[1] + 4 * k;
