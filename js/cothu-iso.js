@@ -14,7 +14,7 @@
   const HL = 0.30;    // height of a land block's top (in cell widths)
   const HW = 0.08;    // height of the water surface (the river is sunken)
   const ZB = -0.40;   // bottom of the stone slab the board sits on
-  const DAIS = 0.07;  // how far the den platform rises above the grass
+  const DAIS = 0.22;  // how far the jade den platform rises above the grass
 
   const OWNER = {
     top:    { main: "#d8442f", glow: "#f0715a", dark: "#8f2518" },
@@ -217,36 +217,104 @@
       return s;
     }
 
+    // ------------------------------------------------------------------ jade den
+    const JADE = { base: "#a9dcc8", baseS: "#6db39a", baseE: "#59997f", top: "#8cebc3", south: "#3fb088", east: "#2d8f6b", dark: "#1d6a4f", gold: "#f0cf6a" };
+    // pale sheen across the upper part of the south face, plus a gold lip along the front edges of a tier
+    function jadeSheen(u0, v0, u1, v1, z0, z1) {
+      const zs = z1 - (z1 - z0) * 0.4;
+      return '<polygon points="' + pts([P(u0, v1, z1), P(u1, v1, z1), P(u1, v1, zs), P(u0, v1, zs)]) + '" fill="#fff" opacity="0.2"/>' +
+             '<polyline points="' + pts([P(u0, v1, z1), P(u1, v1, z1), P(u1, v0, z1)]) + '" stroke="' + JADE.gold + '" stroke-width="1.5" fill="none" stroke-linejoin="round"/>';
+    }
+
     function denStructure(di, dj, owner) {
       const c = OWNER[owner];
-      const zT = HL + DAIS;
-      let s = box(di + 0.05, dj + 0.05, di + 0.95, dj + 0.95, HL, zT, "#d8d1bd", "#a59e8a", "#8b8472");
+      const z1 = HL + 0.09, zT = HL + DAIS;
+      // wide plinth, then a smaller jade tier on top, then two steps at the front
+      let s = box(di + 0.03, dj + 0.03, di + 0.97, dj + 0.97, HL, z1, JADE.base, JADE.baseS, JADE.baseE);
+      s += jadeSheen(di + 0.03, dj + 0.03, di + 0.97, dj + 0.97, HL, z1);
+      s += box(di + 0.12, dj + 0.12, di + 0.88, dj + 0.84, z1, zT, JADE.top, JADE.south, JADE.east);
+      s += jadeSheen(di + 0.12, dj + 0.12, di + 0.88, dj + 0.84, z1, zT);
+      s += box(di + 0.3, dj + 0.84, di + 0.7, dj + 0.9, z1, z1 + 0.09, JADE.top, JADE.south, JADE.east);
+      s += box(di + 0.3, dj + 0.9, di + 0.7, dj + 0.97, z1, z1 + 0.045, JADE.top, JADE.south, JADE.east);
+      // owner-coloured seal on the top
       s += decal(di, dj, zT,
-        '<circle cx="0.5" cy="0.5" r="0.36" fill="' + c.main + '" opacity="0.30"/>' +
-        '<circle cx="0.5" cy="0.5" r="0.36" fill="none" stroke="' + c.glow + '" stroke-width="0.05"/>' +
-        '<circle cx="0.5" cy="0.5" r="0.24" fill="none" stroke="' + c.main + '" stroke-width="0.025"/>' +
-        '<path d="M0.5 0.2 L0.58 0.42 L0.8 0.5 L0.58 0.58 L0.5 0.8 L0.42 0.58 L0.2 0.5 L0.42 0.42 Z" fill="' + c.glow + '" opacity="0.8"/>');
-      // two pillars at the back corners, so a piece standing in the den is never hidden behind them
-      [0.07, 0.78].forEach(ox => {
-        const u0 = di + ox, v0 = dj + 0.06, w = 0.15;
-        s += box(u0, v0, u0 + w, v0 + w, zT, zT + 0.58, "#cfc8b4", "#a59e8a", "#8b8472");
-        s += box(u0 - 0.025, v0 - 0.025, u0 + w + 0.025, v0 + w + 0.025, zT + 0.58, zT + 0.64, "#e3dcc8", "#b3ac98", "#98917f");
-        const t = P(u0 + w / 2, v0 + w / 2, zT + 0.78);
+        '<circle cx="0.5" cy="0.48" r="0.3" fill="' + c.main + '" opacity="0.28"/>' +
+        '<circle cx="0.5" cy="0.48" r="0.3" fill="none" stroke="' + c.glow + '" stroke-width="0.04"/>' +
+        '<circle cx="0.5" cy="0.48" r="0.2" fill="none" stroke="' + JADE.gold + '" stroke-width="0.02"/>' +
+        '<path d="M0.5 0.2 L0.57 0.41 L0.78 0.48 L0.57 0.55 L0.5 0.76 L0.43 0.55 L0.22 0.48 L0.43 0.41 Z" fill="' + c.glow + '" opacity="0.8"/>');
+      // two carved jade pillars at the back corners (a piece in the den is never hidden behind them)
+      [0.14, 0.72].forEach(ox => {
+        const u0 = di + ox, v0 = dj + 0.14, w = 0.14, ph = 0.55;
+        s += box(u0, v0, u0 + w, v0 + w, zT, zT + ph, JADE.top, JADE.south, JADE.east);
+        s += vface([u0, v0 + w], [u0 + w, v0 + w], [], [zT + 0.16, zT + 0.3]);
+        s += '<polyline points="' + pts([P(u0, v0 + w, zT + 0.43), P(u0 + w, v0 + w, zT + 0.43), P(u0 + w, v0, zT + 0.43)]) + '" stroke="' + JADE.gold + '" stroke-width="1.4" fill="none"/>';
+        s += box(u0 - 0.025, v0 - 0.025, u0 + w + 0.025, v0 + w + 0.025, zT + ph, zT + ph + 0.06, "#f6dc82", "#cfae4a", "#a98b36");
+        const t = P(u0 + w / 2, v0 + w / 2, zT + ph + 0.22);
         s += '<circle cx="' + r1(t[0]) + '" cy="' + r1(t[1]) + '" r="' + r1(S * 0.2) + '" fill="' + c.glow + '" opacity="0.28">' + anim("opacity", "0.18;0.5;0.18", 2.1 + ox, ox * 9) + '</circle>' +
              '<circle cx="' + r1(t[0]) + '" cy="' + r1(t[1]) + '" r="' + r1(S * 0.085) + '" fill="' + c.glow + '" stroke="' + c.dark + '" stroke-width="1.2"/>' +
              '<circle cx="' + r1(t[0] - S * 0.025) + '" cy="' + r1(t[1] - S * 0.03) + '" r="' + r1(S * 0.03) + '" fill="#fff" opacity="0.8"/>';
       });
+      // banner on a pole at the back centre: always faces the viewer, so it is drawn in screen space and waves
+      const pb = P(di + 0.5, dj + 0.22, zT), pt = P(di + 0.5, dj + 0.22, zT + 1.05);
+      const k = S / 64, fw = 30 * k, fh = 19 * k, fx = pt[0] + 1.2, fy = pt[1] + 4 * k;
+      const flagD = a => "M" + r1(fx) + " " + r1(fy) + " C" + r1(fx + fw * 0.3) + " " + r1(fy - a) + "," + r1(fx + fw * 0.7) + " " + r1(fy + a) + "," + r1(fx + fw) + " " + r1(fy + a * 0.3) +
+        " L" + r1(fx + fw) + " " + r1(fy + fh + a * 0.3) + " C" + r1(fx + fw * 0.7) + " " + r1(fy + fh + a) + "," + r1(fx + fw * 0.3) + " " + r1(fy + fh - a) + "," + r1(fx) + " " + r1(fy + fh) + " Z";
+      const wave = anim("d", [flagD(4 * k), flagD(-4 * k), flagD(4 * k)].join(";"), 2.2, ox0(di, dj));
+      const ecx = fx + fw * 0.5, ecy = fy + fh * 0.5, er = fh * 0.22;
+      s += '<line x1="' + r1(pb[0]) + '" y1="' + r1(pb[1]) + '" x2="' + r1(pt[0]) + '" y2="' + r1(pt[1]) + '" stroke="#3a2a14" stroke-width="' + r1(4.6 * k) + '" stroke-linecap="round"/>' +
+           '<line x1="' + r1(pb[0]) + '" y1="' + r1(pb[1]) + '" x2="' + r1(pt[0]) + '" y2="' + r1(pt[1]) + '" stroke="#e1cf94" stroke-width="' + r1(2.6 * k) + '" stroke-linecap="round"/>' +
+           '<path d="' + flagD(4 * k) + '" fill="' + c.main + '" stroke="' + JADE.gold + '" stroke-width="' + r1(1.8 * k) + '" stroke-linejoin="round">' + wave + "</path>" +
+           '<circle cx="' + r1(ecx) + '" cy="' + r1(ecy) + '" r="' + r1(fh * 0.3) + '" fill="none" stroke="' + JADE.gold + '" stroke-width="' + r1(1.3 * k) + '"/>' +
+           '<path d="M' + r1(ecx) + " " + r1(ecy - er) + " L" + r1(ecx + er) + " " + r1(ecy) + " L" + r1(ecx) + " " + r1(ecy + er) + " L" + r1(ecx - er) + " " + r1(ecy) + ' Z" fill="' + JADE.gold + '"/>' +
+           '<circle cx="' + r1(pt[0]) + '" cy="' + r1(pt[1] - 1.5 * k) + '" r="' + r1(3.4 * k) + '" fill="' + JADE.gold + '" stroke="#7a5d14" stroke-width="1"/>';
+      // jade sparkle
+      [[0.3, 0.3], [0.7, 0.45], [0.5, 0.68]].forEach((q, i) => {
+        const t = P(di + q[0], dj + q[1], zT);
+        s += '<circle cx="' + r1(t[0]) + '" cy="' + r1(t[1]) + '" r="1.8" fill="#fff" opacity="' + (A ? 0 : 0.6) + '">' + anim("opacity", "0;1;0", 2.4 + i * 0.5, i * 0.9) + "</circle>";
+      });
       return s;
     }
+    const ox0 = (di, dj) => di * 0.7 + dj * 0.4;   // animation phase offset
 
-    function causewayDecal(di, dj, rand) {
-      let s = "";
-      for (let i = 0; i < 3; i++) {
-        const x = 0.15 + rand() * 0.7, y = 0.15 + rand() * 0.7;
-        s += '<path d="M' + r1(x) + " " + r1(y) + " l" + r1(0.12 + rand() * 0.14) + " " + r1(0.05 - rand() * 0.1) + " l" + r1(0.05) + " " + r1(0.1 + rand() * 0.08) + '" stroke="rgba(70,64,52,0.5)" stroke-width="0.012" fill="none"/>';
+    // ------------------------------------------------------------------ wooden bridge (the middle strip between the rivers)
+    // side wall under the deck: a beam, two piles and a cross brace, standing in the water
+    function bridgeFace(p0, p1, top, k) {
+      const lerp = t => [p0[0] + (p1[0] - p0[0]) * t, p0[1] + (p1[1] - p0[1]) * t];
+      const zb = top - 0.09;
+      let s = vface(p0, p1, [{ z0: zb, z1: top, fill: shade("#8f5e30", k) }, { z0: 0, z1: zb, fill: shade("#5a3a20", k) }]);
+      [[0, 0.11], [0.89, 1]].forEach(r => {
+        const a = lerp(r[0]), b = lerp(r[1]);
+        s += '<polygon points="' + pts([P(a[0], a[1], zb), P(b[0], b[1], zb), P(b[0], b[1], 0), P(a[0], a[1], 0)]) + '" fill="' + shade("#7f5532", k) + '" stroke="rgba(30,15,5,0.5)" stroke-width="1"/>';
+      });
+      const a = lerp(0.11), b = lerp(0.89);
+      s += '<polyline points="' + pts([P(a[0], a[1], zb), P(b[0], b[1], 0.02)]) + '" stroke="#a87c48" stroke-width="2.2" fill="none"/>' +
+           '<polyline points="' + pts([P(a[0], a[1], 0.02), P(b[0], b[1], zb)]) + '" stroke="#a87c48" stroke-width="2.2" fill="none"/>' +
+           '<polyline points="' + pts([P(p0[0], p0[1], top), P(p1[0], p1[1], top)]) + '" stroke="rgba(255,220,160,0.55)" stroke-width="1.4" fill="none"/>';
+      return s;
+    }
+    // planks laid across the deck, nails, knots, and a side beam on each edge
+    function bridgeDecal(di, dj, rand) {
+      let s = '<rect x="0" y="0" width="0.08" height="1" fill="#8f5e30"/><rect x="0.92" y="0" width="0.08" height="1" fill="#8f5e30"/>';
+      for (let i = 0; i < 8; i++) {
+        const y = f2(i * 0.125);
+        s += '<rect x="0.08" y="' + y + '" width="0.84" height="0.125" fill="' + (i % 2 ? "rgba(0,0,0,0.07)" : "rgba(255,255,255,0.06)") + '"/>' +
+             '<line x1="0.08" y1="' + y + '" x2="0.92" y2="' + y + '" stroke="rgba(50,28,10,0.55)" stroke-width="0.012"/>' +
+             '<circle cx="0.125" cy="' + f2(i * 0.125 + 0.0625) + '" r="0.011" fill="#4a3320"/><circle cx="0.875" cy="' + f2(i * 0.125 + 0.0625) + '" r="0.011" fill="#4a3320"/>';
       }
-      s += '<circle cx="' + r1(0.2 + rand() * 0.6) + '" cy="' + r1(0.2 + rand() * 0.6) + '" r="0.12" fill="#5f9e45" opacity="0.4"/>';
+      for (let i = 0; i < 2; i++) {
+        s += '<ellipse cx="' + f2(0.2 + rand() * 0.6) + '" cy="' + f2(0.1 + rand() * 0.8) + '" rx="0.03" ry="0.018" fill="none" stroke="rgba(60,35,15,0.5)" stroke-width="0.01"/>';
+      }
       return decal(di, dj, HL, s);
+    }
+    // low rails along both edges with a post at the start of each cell (and one at the far end of the last cell)
+    function bridgeTrim(di, dj, last) {
+      const POST = (u, v) => box(u, v, u + 0.09, v + 0.09, HL, HL + 0.26, "#a0693a", "#7d5230", "#64401f") +
+                             box(u - 0.012, v - 0.012, u + 0.102, v + 0.102, HL + 0.26, HL + 0.29, "#d9a965", "#b68648", "#9a6f36");
+      const RAIL = u => box(u, dj, u + 0.05, dj + 1, HL + 0.17, HL + 0.21, "#c58f52", "#a0693a", "#7d5230") +
+                        box(u, dj, u + 0.05, dj + 1, HL + 0.08, HL + 0.11, "#b07a45", "#8a5a30", "#6f4624");
+      let s = RAIL(di + 0.01) + POST(di, dj) + (last ? POST(di, dj + 0.91) : "");
+      s += RAIL(di + 0.94) + POST(di + 0.91, dj) + (last ? POST(di + 0.91, dj + 0.91) : "");
+      return s;
     }
 
     function waterCell(di, dj, x, y, rand) {
@@ -307,6 +375,7 @@
       if (isRiver(x, y)) return HW;
       if (isCauseway(x, y) || denOwner(x, y) || trapOwner(x, y)) return HL;
       if (isRiver(x - 1, y) || isRiver(x + 1, y) || isRiver(x, y - 1) || isRiver(x, y + 1)) return HL;
+      if (isCauseway(x, y - 1) || isCauseway(x, y + 1)) return HL;   // the cells at the two ends of the bridge stay level with the deck
       const r = rng(o.seed * 777 + x * 29 + y * 53)();
       return HL + (r < 0.25 ? -0.07 : r < 0.6 ? 0 : r < 0.85 ? 0.06 : 0.11);
     }
@@ -400,10 +469,11 @@
       let s = "";
       const river = isRiver(x, y);
       const h = cellHeight(x, y);   // top of this cell
+      const hTop = denOwner(x, y) ? h + DAIS : h;   // what you click on: the raised den platform
       cells[x + "," + y] = {
         display: [di, dj],
-        top: [P(di, dj, h), P(di + 1, dj, h), P(di + 1, dj + 1, h), P(di, dj + 1, h)],
-        center: P(di + 0.5, dj + 0.5, h),
+        top: [P(di, dj, hTop), P(di + 1, dj, hTop), P(di + 1, dj + 1, hTop), P(di, dj + 1, hTop)],
+        center: P(di + 0.5, dj + 0.5, hTop),
         height: h
       };
       if (river) return waterCell(di, dj, x, y, rand);
@@ -416,10 +486,10 @@
       const westWater = di > 0 && isRiver(...toLogical(di - 1, dj));
       // dirt walls get a few strata lines so the height differences between cells read as layered earth
       const strata = southEdge || eastEdge ? null : [h * 0.38, h * 0.7];
-      s += southWater ? woodFace([di, dj + 1], [di + 1, dj + 1], h, 0, 1) :
+      s += wallKind ? bridgeFace([di, dj + 1], [di + 1, dj + 1], h, 1) : southWater ? woodFace([di, dj + 1], [di + 1, dj + 1], h, 0, 1) :
         vface([di, dj + 1], [di + 1, dj + 1], wallBands(h, southEdge ? ZB : 0, wallKind ? "wall" : "dirt", 1, southEdge),
           wallKind ? [h * 0.55] : (southEdge ? [0, ZB / 2] : strata));
-      s += eastWater ? woodFace([di + 1, dj], [di + 1, dj + 1], h, 0, 0.78) :
+      s += wallKind ? bridgeFace([di + 1, dj], [di + 1, dj + 1], h, 0.78) : eastWater ? woodFace([di + 1, dj], [di + 1, dj + 1], h, 0, 0.78) :
         vface([di + 1, dj], [di + 1, dj + 1], wallBands(h, eastEdge ? ZB : 0, wallKind ? "wall" : "dirt", 0.78, eastEdge),
           wallKind ? [h * 0.55] : (eastEdge ? [0, ZB / 2] : strata));
 
@@ -427,7 +497,7 @@
       let topFill;
       if (den) topFill = "#bdb6a2";
       else if (trap) topFill = par ? "#9a8a6c" : "#8f7f62";
-      else if (isCauseway(x, y)) topFill = par ? "#bdb8aa" : "#b0ab9c";
+      else if (isCauseway(x, y)) topFill = par ? "#b98650" : "#ad7a46";   // wooden deck
       else topFill = shade(par ? "#80cc5b" : "#74c052", 1 + (h - HL) * 1.5);   // higher ground is lighter, hollows are darker
       s += '<polygon points="' + pts([P(di, dj, h), P(di + 1, dj, h), P(di + 1, dj + 1, h), P(di, dj + 1, h)]) + '" fill="' + topFill + '"/>';
       // bevel: light on the back edges, dark on the front edges
@@ -436,10 +506,11 @@
 
       if (den) s += denStructure(di, dj, den);
       else if (trap) s += trapTerrain(di, dj, trap, topFill);
-      else if (isCauseway(x, y)) s += causewayDecal(di, dj, rand);
+      else if (isCauseway(x, y)) s += bridgeDecal(di, dj, rand);
       else { s += grassDecor(di, dj, h, rand); s += terrainExtras(di, dj, x, y, h); }
 
-      if (northWater || westWater || southWater || eastWater) s += bankTrim(di, dj, northWater, westWater, southWater, eastWater);
+      if (isCauseway(x, y)) s += bridgeTrim(di, dj, !isCauseway(...toLogical(di, dj + 1)));
+      else if (northWater || westWater || southWater || eastWater) s += bankTrim(di, dj, northWater, westWater, southWater, eastWater);
 
       const p = pieceAt[x + "," + y];
       if (p) s += pieceShape(p, di, dj, den ? HL + DAIS : h);
