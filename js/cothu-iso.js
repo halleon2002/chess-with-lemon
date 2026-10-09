@@ -251,8 +251,8 @@
         '<circle cx="0.5" cy="' + cy + '" r="0.3" fill="none" stroke="' + c.glow + '" stroke-width="0.04"/>' +
         '<circle cx="0.5" cy="' + cy + '" r="0.2" fill="none" stroke="' + JADE.gold + '" stroke-width="0.02"/>' +
         '<path d="M0.5 ' + f2(cy - 0.28) + ' L0.57 ' + f2(cy - 0.07) + ' L0.78 ' + cy + ' L0.57 ' + f2(cy + 0.07) + ' L0.5 ' + f2(cy + 0.28) + ' L0.43 ' + f2(cy + 0.07) + ' L0.22 ' + cy + ' L0.43 ' + f2(cy - 0.07) + ' Z" fill="' + c.glow + '" opacity="0.8"/>');
-      // banner on a pole at the back centre: always faces the viewer, so it is drawn in screen space and waves
-      const pb = P(di + 0.5, dj + 0.22, zT), pt = P(di + 0.5, dj + 0.22, zT + 1.05);
+      // banner on a pole in the middle of the den: always faces the viewer, so it is drawn in screen space and waves
+      const pb = P(di + 0.5, dj + cy, zT), pt = P(di + 0.5, dj + cy, zT + 1.05);
       const k = S / 64, fw = 30 * k, fh = 19 * k, fx = pt[0] + 1.2, fy = pt[1] + 4 * k;
       const flagD = a => "M" + r1(fx) + " " + r1(fy) + " C" + r1(fx + fw * 0.3) + " " + r1(fy - a) + "," + r1(fx + fw * 0.7) + " " + r1(fy + a) + "," + r1(fx + fw) + " " + r1(fy + a * 0.3) +
         " L" + r1(fx + fw) + " " + r1(fy + fh + a * 0.3) + " C" + r1(fx + fw * 0.7) + " " + r1(fy + fh + a) + "," + r1(fx + fw * 0.3) + " " + r1(fy + fh - a) + "," + r1(fx) + " " + r1(fy + fh) + " Z";
