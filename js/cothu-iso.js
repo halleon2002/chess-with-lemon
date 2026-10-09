@@ -56,7 +56,7 @@
   const LETTER = { rat: "R", cat: "C", dog: "D", wolf: "W", leopard: "P", tiger: "T", lion: "L", elephant: "E" };
 
   function render(opts) {
-    const o = Object.assign({ yaw: 34, pitch: 50, scale: 64, flip: false, pieces: [], seed: 7, background: true, animate: true }, opts || {});
+    const o = Object.assign({ yaw: 34, pitch: 50, scale: 64, flip: false, pieces: [], seed: 7, background: true, animate: true, croc: true }, opts || {});
     const th = o.yaw * Math.PI / 180, ph = o.pitch * Math.PI / 180;
     const cs = Math.cos(th), sn = Math.sin(th), sp = Math.sin(ph), cp = Math.cos(ph), S = o.scale;
 
@@ -637,15 +637,71 @@
       }
     }
 
+    // ------------------------------------------------------------- a crocodile patrolling both rivers
+    // It swims east along the middle row, goes under the bridge, comes back west, and surfaces and sinks as it goes.
+    // It is drawn after the board but clipped by the bridge's on-screen silhouette, so the deck hides it while it is underneath.
+    const bridgeHull = (function () {
+      const q = [];
+      [3, 4].forEach(u => [3, 6].forEach(v => [0, HL + 0.3].forEach(z => q.push(P(u, v, z)))));
+      q.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+      const cross = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+      const lo = [], up = [];
+      q.forEach(p => { while (lo.length >= 2 && cross(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); });
+      q.slice().reverse().forEach(p => { while (up.length >= 2 && cross(up[up.length - 2], up[up.length - 1], p) <= 0) up.pop(); up.push(p); });
+      lo.pop(); up.pop();
+      return lo.concat(up);
+    })();
+    let croc = "";
+    if (A && o.croc !== false) {
+      const Wz = HW + 0.01, vC = 4.5, uW = 1.6, uE = 5.4, T = 26;
+      const eW = P(uW, vC, Wz), eE = P(uE, vC, Wz);
+      const dx = r1(eE[0] - eW[0]), dy = r1(eE[1] - eW[1]);
+      const leg = (x, y, ang) => swayG(x, y, 18, 0.9, x * 3 + y * 5,
+        '<ellipse cx="' + x + '" cy="' + y + '" rx="0.075" ry="0.032" transform="rotate(' + ang + " " + x + " " + y + ')" fill="#3b6a2c" stroke="#2b4d20" stroke-width="0.01"/>');
+      let scutes = "";
+      for (let i = 0; i < 6; i++) scutes += '<circle cx="' + f2(-0.15 + i * 0.065) + '" cy="-0.035" r="0.017" fill="#2f5724"/><circle cx="' + f2(-0.15 + i * 0.065) + '" cy="0.035" r="0.017" fill="#2f5724"/>';
+      const inner =
+        // expanding ripple ring and a faint shadow
+        '<ellipse cx="0" cy="0" rx="0.3" ry="0.14" fill="none" stroke="#fff" stroke-width="0.012" opacity="0.5">' +
+          anim("rx", "0.32;0.62", 1.7, 0) + anim("ry", "0.15;0.3", 1.7, 0) + anim("opacity", "0.55;0", 1.7, 0) + "</ellipse>" +
+        '<ellipse cx="0.03" cy="0.02" rx="0.34" ry="0.14" fill="rgba(0,35,55,0.28)"/>' +
+        swayG(-0.18, 0, 14, 1.1, 0,
+          '<path d="M-0.15 -0.075 C-0.3 -0.08 -0.42 -0.03 -0.56 0 C-0.42 0.03 -0.3 0.08 -0.15 0.075 Z" fill="#43702f" stroke="#2b4d20" stroke-width="0.012"/>' +
+          '<path d="M-0.2 0 L-0.5 0" stroke="#2f5724" stroke-width="0.02" stroke-dasharray="0.03 0.035"/>') +
+        leg(-0.08, -0.12, -25) + leg(-0.08, 0.12, 25) + leg(0.12, -0.115, 25) + leg(0.12, 0.115, -25) +
+        '<path d="M-0.2 -0.09 Q0 -0.15 0.22 -0.09 L0.22 0.09 Q0 0.15 -0.2 0.09 Z" fill="#4e7d3a" stroke="#2b4d20" stroke-width="0.012"/>' +
+        '<ellipse cx="0.01" cy="0" rx="0.2" ry="0.05" fill="#6c9a50" opacity="0.7"/>' + scutes +
+        '<path d="M0.2 -0.085 L0.5 -0.04 Q0.58 0 0.5 0.04 L0.2 0.085 Z" fill="#5a8a42" stroke="#2b4d20" stroke-width="0.012"/>' +
+        '<circle cx="0.52" cy="-0.018" r="0.01" fill="#1d3414"/><circle cx="0.52" cy="0.018" r="0.01" fill="#1d3414"/>' +
+        [-1, 1].map(sd => '<circle cx="0.3" cy="' + f2(sd * 0.07) + '" r="0.03" fill="#6b9a50" stroke="#2b4d20" stroke-width="0.01"/>' +
+          '<circle cx="0.31" cy="' + f2(sd * 0.07) + '" r="0.017" fill="#e6e08a"/><ellipse cx="0.312" cy="' + f2(sd * 0.07) + '" rx="0.005" ry="0.013" fill="#1a1a10"/>').join("");
+      // surfacing and sinking: fractions of one leg, with the opacity at each
+      const fr = [0, 0.06, 0.1, 0.16, 0.28, 0.33, 0.4, 0.52, 0.6, 0.7, 0.76, 0.86, 0.94, 1];
+      const op = [0, 0.9, 0.15, 0.9, 0.9, 0, 0.85, 0.85, 0.1, 0.9, 0.9, 0.2, 0.8, 0];
+      const flick = (t0, t1) => {
+        const kt = [], vv = [];
+        if (t0 > 0) { kt.push(0); vv.push(0); }
+        fr.forEach((f, i) => { kt.push(f2(t0 + f * (t1 - t0))); vv.push(op[i]); });
+        if (t1 < 1) { kt.push(1); vv.push(0); }
+        return '<animate attributeName="opacity" values="' + vv.join(";") + '" keyTimes="' + kt.join(";") + '" dur="' + T + 's" repeatCount="indefinite"/>';
+      };
+      const east = '<g opacity="0"><animateTransform attributeName="transform" type="translate" values="0 0;' + dx + " " + dy + ";" + dx + " " + dy +
+        '" keyTimes="0;0.4;1" dur="' + T + 's" repeatCount="indefinite"/>' + flick(0, 0.4) + decal(uW, vC, Wz, inner) + "</g>";
+      const west = '<g opacity="0"><animateTransform attributeName="transform" type="translate" values="0 0;0 0;' + (-dx) + " " + (-dy) + ";" + (-dx) + " " + (-dy) +
+        '" keyTimes="0;0.5;0.9;1" dur="' + T + 's" repeatCount="indefinite"/>' + flick(0.5, 0.9) + decal(uE, vC, Wz, '<g transform="scale(-1 1)">' + inner + "</g>") + "</g>";
+      croc = '<g pointer-events="none" clip-path="url(#ctIsoNoBridge)">' + east + west + "</g>";
+    }
+
     const defs =
       '<defs>' +
       '<clipPath id="ctIsoCell"><rect x="0" y="0" width="1" height="1"/></clipPath>' +
+      '<clipPath id="ctIsoNoBridge"><path clip-rule="evenodd" d="M' + r1(vb[0] - 50) + ' ' + r1(vb[1] - 50) + ' h' + r1(vb[2] + 100) + ' v' + r1(vb[3] + 100) + ' h' + r1(-vb[2] - 100) + ' Z M' + bridgeHull.map(p => r1(p[0]) + ' ' + r1(p[1])).join(' L') + ' Z"/></clipPath>' +
       '<linearGradient id="ctIsoSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#bff3ea"/><stop offset="55%" stop-color="#5fc9c0"/><stop offset="100%" stop-color="#1d7f84"/></linearGradient>' +
       '<linearGradient id="ctIsoLeaf" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#7be07a"/><stop offset="100%" stop-color="#2b9a4b"/></linearGradient>' +
       '</defs>';
 
     const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + vb.map(r1).join(" ") + '" width="' + r1(vb[2]) + '" height="' + r1(vb[3]) + '">' +
-      defs + bg + cliff + board + vines + motes + leaves + "</svg>";
+      defs + bg + cliff + board + croc + vines + motes + leaves + "</svg>";
 
     return { svg: svg, viewBox: vb, cells: cells, project: P, toDisplay: toDisplay, toLogical: toLogical };
   }
